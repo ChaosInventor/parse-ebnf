@@ -1,0 +1,4 @@
+product= 2 * 3 * 5 * 7 * 11 * (will not get multiplied | at all);
+will not get multiplied = ;
+at all = ;
+

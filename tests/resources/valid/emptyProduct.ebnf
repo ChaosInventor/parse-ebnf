@@ -1,0 +1,4 @@
+empty = ; (* Why is this in the spec??? *)
+
+even emptier = ,!,,  ,|, ,/; (* Is this even standard compliant? *)
+

@@ -1,0 +1,7 @@
+product = something;
+something = ; (* Something is actually nothing *)
+
+--! <--- Weird char, causes syntax error !--
+
+not getting parsed = (* Another error in case the above one isn't caught. *)
+

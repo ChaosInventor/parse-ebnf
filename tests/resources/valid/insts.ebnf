@@ -1,0 +1,452 @@
+(*
+
+    Each DaLanguage instruction system :abbr:`AST (Abstract syntax tree)` must
+    contain an instruction definition as its root.
+
+    An instruction definition is comprised of two required parts:
+
+    - A header;
+    - A body.
+
+    Valid examples:
+
+    .. code-block:: dal
+
+        (Insts1, Insts2, Insts3, Data, Something)
+        {
+            Insts1(Data);
+            loop: Insts2(Something)[loop, exit];
+            exit: Insts3(Insts1);
+            Insts2(Data)[skip];
+
+            inst: Insts1(Data);
+
+            skip: inst();
+        }
+
+    Invalid examples:
+
+    .. code-block:: dal
+
+        []
+        {
+            (ALittle)
+            { }
+        }
+
+ *)
+instruction definition =
+    instruction definition header, instruction definition body;
+
+
+(*
+
+    An instruction definition header is comprised of 1 required and 1 optional
+    part:
+
+    - A required :token:`unlabeled value list`;
+    - An optional :token:`unlabeled jump list`.
+
+    The value list must always come before the jump list.
+
+    Valid examples:
+
+    .. code-block:: dal
+
+        (Value1, value2, value3, val)[ju1, jup2, loc5, failed, failed, ju1]
+
+    .. code-block:: dal
+
+        (42, value2, value3, @^#^@G)[ju1, jup2, loc5]
+
+    .. code-block:: dal
+
+        (
+            A Very Very Long Name,
+            A Very Very Long Name Again,
+            A Very Very Long Name And Again,
+            A Very Very Long Name And Again And Again,)
+        [jump]
+
+    .. code-block:: dal
+
+        (c0ab14d1cb8c3cddee7645ccaf390b179d287f51)[]
+
+    .. code-block:: dal
+
+        (ef64caa88fc02b76d1a3fa49670e6df72e527f28)
+
+    .. code-block:: dal
+
+        ()
+
+    .. code-block:: dal
+
+        ()[]
+
+    Invalid examples:
+
+    .. code-block:: dal
+
+        []()
+
+    .. code-block:: dal
+
+        (AAAA)(BBB)[]()
+
+    .. code-block:: dal
+
+        (Val[Jmp]
+
+    .. code-block:: dal
+
+        (item,)[jump:]
+
+    .. code-block:: dal
+
+        (item{})[,]
+
+    .. code-block:: dal
+
+        (())[jump:,]
+
+    .. code-block:: dal
+
+        []
+
+ *)
+instruction definition header = unlabeled value list, [unlabeled jump list];
+
+unlabeled value list = "(", [unlabeled list], ")";
+unlabeled jump list = "[", [unlabeled list], "]";
+
+(*
+
+    Unlabeled lists are comma separated sequences of zero or more names, enclosed in
+    a terminating and starting symbol.
+
+    The last member of the sequence may optionally be followed by a comma. That is
+    to say, a terminal comma is not an error.
+
+    There are 2 types of unlabeled lists:
+
+    - Value lists;
+    - Jump lists;
+
+    They differ only in their starting and terminating symbols, as illustrated in
+    the following table:
+
+    =====  ===============  ==================
+    Type   Starting symbol  Terminating symbol
+    =====  ===============  ==================
+    Value  (                )
+    Jump   [                ]
+    =====  ===============  ==================
+
+    For examples see the ones at :token:`instruction definition header`.
+
+ *)
+unlabeled list = name, [","] | name, ",", unlabeled list;
+
+
+(*
+
+    An instruction definition body is a sequence of zero or more labeled
+    :token:`instruction definitions <instruction definition>` and at least one
+    :token:`instruction specification`, with an optional label, in any order,
+    enclosed in curly brackets.
+
+    A valid instruction definition body must have a :token:`label` before each
+    of its nested :token:`instruction definitions <instruction definition>`
+    since without a :token:`label` it wouldn't be able to reference or use the
+    unlabeled :token:`instruction definitions <instruction definition>`,
+    effectively making them redundant.
+
+    Each :token:`instructions specification` can optionally be prefixed with a
+    :token:`label` in order for it to later be referenced by other
+    :token:`instruction specifications <instruction specification>` or be used
+    as a :ref:`jump destination <specInstsSemJumpDest>`. Labeling is optional
+    for :token:`specifications <instruction specification>` as even without a
+    :token:`label` they still have a usage in
+    :ref:`control flow <specInstsSemFlow>`, and as such are not redundant, in
+    contrast with unlabeled
+    :token:`instruction definitions <instruction definition>`.
+
+    Valid examples:
+
+    .. code-block:: dal
+
+        { Spec; Spec2(); Spec3; def: (J){J();} def(J)[skip]; J:Spec(Spec2); skip: J; }
+
+    .. code-block:: dal
+
+        {
+            Spec5; Special();
+            Spectacular;
+            S:Spec(Spec2); s: S;
+        }
+
+    .. code-block:: dal
+
+        { Inst()
+        ; Minst[Ke]
+        ; T
+        ; Ke
+        : (one, two, three){three; two; one;}
+        }
+
+    Invalid examples:
+
+    .. code-block:: dal
+
+        {
+            \: (func){func();}
+            /: (fun2){fun2();}
+        }
+
+    .. code-block:: dal
+
+        {
+            {
+                spec();
+            }
+        }
+
+    .. code-block:: dal
+
+        {
+            specter();
+
+ *)
+instruction definition body =
+    "{",
+        { label, instruction definition },
+        [label], instruction specification,
+        {
+            [label], instruction specification
+            |
+            label, instruction definition
+        },
+    "}";
+
+
+(*
+
+    An instruction specification is a :token:`name` followed optionally by
+    a :token:`labeled value list` and a :token:`labeled jump list`, in that
+    order, and finally delimited with a ";".
+
+    Valid examples:
+
+    .. code-block:: dal
+
+        spec(val)[jump];
+
+    .. code-block:: dal
+
+        spec(val);
+
+    .. code-block:: dal
+
+        spec[jump,];
+
+    .. code-block:: dal
+
+        spec;
+
+    .. code-block:: dal
+
+        loop: test(bol: val, other Val, 14)[false: end, true: loop, error];
+
+     Invalid examples:
+
+
+    .. code-block:: dal
+
+        spec[jump](val);
+
+    .. code-block:: dal
+
+        (val)[jump];
+
+    .. code-block:: dal
+
+        spec(val)[jump]
+
+    .. code-block:: dal
+
+        test(bol:, other Val, 28)[jump];
+
+    .. code-block:: dal
+
+        spec[jump:];
+
+ *)
+instruction specification =
+    name, [labeled value list], [labeled jump list], ";";
+
+labeled value list = "(", [labeled list], ")";
+labeled jump list = "[", [labeled list], "]";
+
+(*
+
+    Labeled lists are similar to :token:`unlabeled lists <unlabeled list>`, they
+    only differ in the fact that each :token:`name` may be optionally prefixed
+    with a :token:`label`.
+
+    Valid examples:
+
+    .. code-block:: dal
+
+        (val: Value1, value2, )
+
+    .. code-block:: dal
+
+        [ju1, jup2, loc5, error: failed, failed, successeded: ju1]
+
+    .. code-block:: dal
+
+        (42, value2, value3, @^#^@G)[ju1, jup2, loc5]
+
+    .. code-block:: dal
+
+        (
+            A Very Very Long Name,
+            A Very Very Long Name Again,
+            Namer: A Very Very Long Name And Again,
+            A Very Very Long Name And Again And Again,)
+
+    .. code-block:: dal
+
+        (ef64caa88fc02b76d1a3fa49670e6df72e527f28: c0ab14d1cb8c3cddee7645ccaf390b179d287f51)
+
+    .. code-block:: dal
+
+        ()
+
+    .. code-block:: dal
+
+        []
+
+    Invalid examples:
+
+    .. code-block:: dal
+
+        (AAAA:)
+
+    .. code-block:: dal
+
+        (Val
+
+    .. code-block:: dal
+
+        [,]
+
+    .. code-block:: dal
+
+        (item{})
+
+    .. code-block:: dal
+
+        [jump:,]
+
+    .. code-block:: dal
+
+        ]
+
+ *)
+labeled list = [label], name, [","]
+             | [label], name, ",", labeled list;
+
+(*
+
+    A label is a :token:`name` followed by a ":".
+
+    Valid examples:
+
+    .. code-block:: txt
+
+        namester:
+
+    .. code-block:: txt
+
+        #?*@`*$*d31//#@23*!$MM~:
+
+    .. code-block:: txt
+
+        58 bb 9c20b6a1046f8 d9be5feea443fbb8 45f2bf5:
+
+    Invalid examples:
+
+    .. code-block:: txt
+
+        {
+
+    .. code-block:: txt
+
+        :
+
+    .. code-block:: txt
+
+        Namey!
+
+*)
+label = name, ":";
+(*
+
+    A name is one or more :token:`characters`. Empty names are not allowed.
+
+    Valid examples:
+
+    .. code-block:: txt
+
+        Namey!
+
+    .. code-block:: txt
+
+        #?*@`*$*d31//#@23*!$MM~
+
+    .. code-block:: txt
+
+        58 bb 9c20b6a1046f8 d9be5feea443fbb8 45f2bf5
+
+    Invalid examples:
+
+    .. code-block:: txt
+
+        {
+
+    .. code-block:: txt
+
+        :;
+
+    .. code-block:: txt
+
+        namester:
+
+*)
+
+name = character, { character };
+
+(*
+    The formal grammar assumes that what's being parsed is a byte stream, as
+    such a character is defied as a byte that is > 0x20 and < 0x7F, excluding
+    the bytes for the characters in quotes: "()[]{}:;,"(hex values being:
+    0x28, 0x29, 0x5B, 0x5D, 0x7B, 0x7D, 0x3A, 0x3B, 0x2C; respectively).
+
+    If a byte outside the range is encountered that is not an excluded
+    character, then that byte is ignored, it it not parsed and it has no effect
+    on the output.
+
+    If an excluded byte is encountered, then it parsed based on the other
+    production rules, as each excluded byte corresponds to a character that
+    already has a syntactic meaning in other production rules.
+
+ *)
+character =
+    ?
+        ASCII 0x21-0x7E, inclusive, excluding the codes for each character in
+        the quotes: "()[]{}:;,". If a character outside the range is
+        encountered, and is not an excluded characters, then it is ignored.
+    ?;
+
