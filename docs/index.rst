@@ -1,18 +1,30 @@
-# SPDX-FileCopyrightText: 2023-present ChaosInventor <chaosinventor@yandex.com>
-#
-# SPDX-License-Identifier: MIT
+parse-ebnf's documentation
+==========================
 
-import pytest
-import glob
+Introduction
+------------
 
-pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("resources/valid/*"))
+parse-ebnf if a parser for EBNF, Extended Backus-Naur Form. Give it an EBNF
+input and it'll generate a parser tree.
 
-def test_example(ebnf_path):
+.. note:: This package does not generate a parser for the described grammar.
+
+Installation
+------------
+
+.. code-block:: shell
+
+    pip install parse-ebnf
+
+Quick start
+-----------
+
+.. code-block:: python
 
     from parse_ebnf import AST
 
     #Your EBNF file goes here
-    ebnf = open(ebnf_path, 'r')
+    ebnf = open('grammar.ebnf', 'r')
 
     ast = AST()
 
@@ -40,4 +52,21 @@ def test_example(ebnf_path):
     for child in ast.root.children:
         if isinstance(child, ASTCommentNode):
             print(child.data)
+
+Reference
+=========
+
+.. toctree::
+   :maxdepth: 1
+
+    Classes <classes.rst>
+    Tree structure <tree.rst>
+    Testing <testing.rst>
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 

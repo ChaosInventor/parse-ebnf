@@ -62,7 +62,8 @@ for child in ast.root.children:
 
 ## Documentation
 
-TODO
+Check the docs/ directory, using sphinx you can build your own html or pdf
+version. Currently working on github page to host the docs.
 
 ## License
 
