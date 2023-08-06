@@ -1,9 +1,13 @@
+# SPDX-FileCopyrightText: 2023-present ChaosInventor <chaosinventor@yandex.com>
+#
+# SPDX-License-Identifier: MIT
+
 import pytest
 import glob
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("resources/valid/*"))
 
-def test_example(tmp_path, ebnf_path):
+def test_example(ebnf_path):
 
     from parse_ebnf import AST
 
