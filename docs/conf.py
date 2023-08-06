@@ -23,6 +23,29 @@ extensions = ['sphinx.ext.autodoc']
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+rst_prolog = """
+.. |AST| replace:: :py:class:`parse_ebnf.AST`
+.. |ASTNode| replace:: :py:class:`parse_ebnf.ASTNode`
+.. |ASTRootNode| replace:: :py:class:`parse_ebnf.ASTRootNode`
+.. |ASTTextNode| replace:: :py:class:`parse_ebnf.ASTTextNode`
+.. |ASTCommentNode| replace:: :py:class:`parse_ebnf.ASTCommentNode`
+.. |ASTSpaceNode| replace:: :py:class:`parse_ebnf.ASTSpaceNode`
+.. |ASTIdentifierNode| replace:: :py:class:`parse_ebnf.ASTIdentifierNode`
+.. |ASTLiteralNode| replace:: :py:class:`parse_ebnf.ASTLiteralNode`
+.. |ASTProductNode| replace:: :py:class:`parse_ebnf.ASTProductNode`
+.. |ASTDefinitionListNode| replace:: :py:class:`parse_ebnf.ASTDefinitionListNode`
+.. |ASTDefinitionNode| replace:: :py:class:`parse_ebnf.ASTDefinitionNode`
+.. |ASTTermNode| replace:: :py:class:`parse_ebnf.ASTTermNode`
+.. |ASTExceptionNode| replace:: :py:class:`parse_ebnf.ASTExceptionNode`
+.. |ASTRepetitionNode| replace:: :py:class:`parse_ebnf.ASTRepetitionNode`
+.. |ASTTerminalNode| replace:: :py:class:`parse_ebnf.ASTTerminalNode`
+.. |ASTRepeatNode| replace:: :py:class:`parse_ebnf.ASTRepeatNode`
+.. |ASTOptionNode| replace:: :py:class:`parse_ebnf.ASTOptionNode`
+.. |ASTGroupNode| replace:: :py:class:`parse_ebnf.ASTGroupNode`
+.. |ASTSpecialNode| replace:: :py:class:`parse_ebnf.ASTSpecialNode`
+.. |ASTEmptyNode| replace:: :py:class:`parse_ebnf.ASTEmptyNode`
+"""
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
