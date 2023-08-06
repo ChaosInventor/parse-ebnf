@@ -176,22 +176,22 @@ class ASTNode:
 
     Contains the following variables:
 
-    - ``parent``, the parent node of this node. It is ``None`` only for
+    - ``parent`` -- the parent node of this node. It is ``None`` only for
       |ASTRootNode|.
-    - ``children``, a list of this node's children. Empty only for instance of
+    - ``children`` -- a list of this node's children. Empty only for instance of
       |ASTTextNode|.
-    - ``depth``, an integer denoting how deep a node is in the tree. The root is
-      defined as being at depth 0, it's children at depth 1, etc.
-    - ``startLine``, the line where the text that this node is comprised of
+    - ``depth`` -- an integer denoting how deep a node is in the tree. The root
+      is defined as being at depth 0, it's children at depth 1, etc.
+    - ``startLine`` -- the line where the text that this node is comprised of
       starts, inclusively. Counting starts from 1, and is incremented each time
       a newline is encountered in the input;
-    - ``startColumn``, the column where the text that this node is comprised of
-      starts, inclusively. Counting starts at 1, and in incremented every
+    - ``startColumn`` -- the column where the text that this node is comprised
+      of starts, inclusively. Counting starts at 1, and in incremented every
       character. Each newline resets the counter to 0;
-    - ``endLine``, like ``startLine`` except that this is where the text ends,
+    - ``endLine`` -- like ``startLine`` except that this is where the text ends,
       exclusively;
-    - ``endColumn``, like ``startColumn`` except that this is where the text ends,
-      exclusively.
+    - ``endColumn`` -- like ``startColumn`` except that this is where the text
+      ends, exclusively.
 
     The following always holds for coordinates:
 
@@ -266,6 +266,17 @@ class ASTNode:
         return node.parse(parser)
 
 class ASTRootNode(ASTNode):
+    """ The root AST node.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    ``None``
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    (|ASTProductNode| |or| |ASTCommentNode| |or| |ASTSpaceNode|)\ |any|
+
+    """
     def parse(self, parser):
         self.startLine = 1
         self.startColumn = 1
@@ -289,6 +300,19 @@ class ASTRootNode(ASTNode):
         return f"Root:{super().__str__()}"
 
 class ASTTextNode(ASTNode):
+    """ Base class for leaf nodes.
+
+    This node is a base class for all leaf nodes, nodes whose ``children`` list
+    is empty.
+
+    .. note:: Only leafs nodes contain text data in the tree.
+
+    This node has the following variables:
+
+    - Variables inherited from |ASTNode|;
+    - ``data`` -- the text content of the node, a string.
+
+    """
     data = ''
 
     def parse(self, parser):
@@ -312,6 +336,23 @@ class ASTTextNode(ASTNode):
     def __str__(self):
         return f"Text({self.data}):{super().__str__()}"
 class ASTCommentNode(ASTTextNode):
+    """Nodes holding EBNF comments.
+
+    Comments in EBNF are enclosed by ``(*``, ``*)`` pairs. Nesting is allowed.
+
+    The ``data`` string does **NOT** contain the enclosing comment markers.
+    Nested comment markers are included however. ``repr`` returns a proper
+    comment string.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTRootNode|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``[]``, leaf node, see |ASTTextNode|.
+
+    """
     def parse(self, parser):
         assert parser.c == '(', f"Expected current character to be '(', not {parser.c}."
 
@@ -357,6 +398,16 @@ class ASTCommentNode(ASTTextNode):
     def __str__(self):
         return f"Comment({self.data}):{ASTNode.__str__(self)}"
 class ASTSpaceNode(ASTTextNode):
+    """Node holding whitespace.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    ``Any``, just about every node that is not a leaf node holds this node.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |ASTTextNode|.
+    """
     def parse(self, parser):
         assert parser.c.isspace(), f"Expected the current character to be a space, not {parser.c}"
         self.startLine = parser.line
@@ -377,6 +428,20 @@ class ASTSpaceNode(ASTTextNode):
     def  __str__(self):
         return f"Space:{ASTNode.__str__(self)}"
 class ASTIdentifierNode(ASTTextNode):
+    """Node holding an identifier.
+
+    Identifiers are alphanumeric string that do not start with a number. They
+    do not contain trailing or leading whitespace, however they may contain
+    whitespace in the middle.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTProductNode| |or| |ASTTermNode| |or| |ASTExceptionNode|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |ASTTextNode|.
+    """
     def parse(self, parser):
         assert parser.c.isalpha(), f"Expected current character to be alphabetic, got {parser.c} instead."
 
@@ -435,6 +500,22 @@ class ASTIdentifierNode(ASTTextNode):
     def  __str__(self):
         return f"Identifier({self.data}):{ASTNode.__str__(self)}"
 class ASTLiteralNode(ASTTextNode):
+    """Node holding one or more characters.
+
+    The actual character sequence depends on the parent. The parent nodes have
+    documentation pertaining to the exact sequence.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTProductNode| |or| |ASTDefinitionListNode| |or| |ASTDefinitionNode| |or|
+    |ASTTermNode| |or| |ASTExceptionNode| |or| |ASTRepetitionNode| |or|
+    |ASTTerminalNode| |or| |ASTRepeatNode| |or| |ASTOptionNode| |or|
+    |ASTGroupNode| |or| |ASTSpaceNode|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |ASTTextNode|.
+    """
     def parse(self, parser):
         self.startLine = parser.line
         self.startColumn = parser.column
@@ -485,6 +566,30 @@ class ASTLiteralNode(ASTTextNode):
         return f"Literal({self.data}):{ASTNode.__str__(self)}"
 
 class ASTProductNode(ASTNode):
+    """ A node holding a product.
+
+    A product is a grammar rule, those of the form:
+
+    ``something = another | third, 'a';``
+
+    This node has the following variables:
+
+    - Those inherited from |ASTNode|;
+    - ``lhs``, the left hand side of the rule, the first |ASTIdentifierNode| of
+      the children;
+    - ``rhs``, the right had side of the rule, the first |ASTDefinitionListNode|
+      of the children.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTRootNode|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTSpaceNode|\ |maybe|, |ASTIdentifierNode|, |ASTSpaceNode|\ |maybe|,
+    |ASTLiteralNode| = '=', |ASTSpaceNode|\ |maybe|, |ASTDefinitionListNode|,
+    |ASTSpaceNode|\ |maybe|, |ASTLiteralNode| = ';' | '.'
+    """
     lhs = None
     rhs = None
 
@@ -526,6 +631,22 @@ class ASTProductNode(ASTNode):
         return f"Product:{super().__str__()}"
 
 class ASTDefinitionListNode(ASTNode):
+    """ Node containing a list of definitions.
+
+    Definitions are the lists of concatenations. Definitions are placed
+    in-between alterations symbols. This node can be seen as holding all
+    alternatives of a rule.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTProductNode| |or| |ASTRepetitionNode| |or| |ASTOptionNode| |or|
+    |ASTGroupNode|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTSpaceNode|\ |maybe|, (|ASTDefinitionNode|, |ASTSpaceNode|\ |maybe|,
+    |ASTLiteralNode| = '|' | '/' | '!')\ |any|, |ASTSpaceNode|\ |maybe|.
+    """
     def parse(self, parser):
         self.startLine = parser.line
         self.startColumn = parser.column
@@ -560,6 +681,21 @@ class ASTDefinitionListNode(ASTNode):
         return f"Definition list:{super().__str__()}"
 
 class ASTDefinitionNode(ASTNode):
+    """A node holding a definition.
+
+    A definition is the list of concatenations on the right hand side of a rule.
+    This node can be seen as having a sequence that a rule needs to match.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTDefinitionListNode|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTSpaceNode|\ |maybe|, ((|ASTTermNode| |or| |ASTEmptyTerm|), |ASTSpaceNode|\ |maybe|,
+    |ASTLiteralNode| = ',', |ASTSpaceNode|\ |maybe|)\ |any|.
+
+    """
     def parse(self, parser):
         self.startLine = parser.line
         self.startColumn = parser.column
@@ -591,6 +727,43 @@ class ASTDefinitionNode(ASTNode):
         return f"Definition:{super().__str__()}"
 
 class ASTTermNode(ASTNode):
+    """ Node holding a single term.
+
+    Terms are values that a rule can take, they may be either:
+
+    - Terminals;
+    - Non-terminals;
+    - Groups.
+
+    This node has the following variables:
+
+    - Those inherited from |ASTNode|;
+    - ``repetition`` -- an |ASTRepetitionNode|, the one in the children list;
+    - ``primary`` -- the term that this node is defined as, the one in the
+      children list, may either be:
+
+        - |ASTTerminalNode|;
+        - |ASTIdentifierNode|;
+        - |ASTGroupNode|;
+        - |ASTRepeatNode|;
+        - |ASTOptionNode|;
+        - |ASTSpecialNode|.
+
+    - ``exception`` -- an |ASTExceptionNode|, the one in the children list.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTDefinitionNode|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTSpaceNode|\ |maybe|, |ASTRepetitionNode|\ |maybe|, |ASTSpaceNode|\
+    |maybe|, (|ASTIdentifierNode| |or| |ASTTerminalNode| |or| |ASTRepeatNode|
+    |or| |ASTOptionNode| |or| |ASTSpecialNode| |or| |ASTGroupNode| |or|
+    |ASTEmptyNode|), (|ASTSpaceNode|\ |maybe|, |ASTLiteralNode| = '-',
+    |ASTExceptionNode|)\ |maybe|.
+
+    """
     repetition = None
     primary = None
     exception = None
@@ -676,6 +849,23 @@ class ASTTermNode(ASTNode):
         return f"Term:{super().__str__()}"
 
 class ASTExceptionNode(ASTNode):
+    """ A node holding the exception to a term.
+
+    Exceptions are written after a term's primary, prefixed with a ``-``.
+    They're terms themselves, except that they don't have exceptions and
+    repetitions.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTTermNode|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTSpaceNode|\ |maybe|, (|ASTIdentifierNode| |or| |ASTTerminalNode| |or|
+    |ASTRepeatNode| |or| |ASTOptionNode| |or| |ASTSpecialNode| |or|
+    |ASTGroupNode| |or| |ASTEmptyNode|).
+
+    """
     primary = None
 
     def parse(self, parser):
@@ -743,6 +933,21 @@ class ASTExceptionNode(ASTNode):
         return f"Exception:{super().__str__()}"
 
 class ASTRepetitionNode(ASTNode):
+    """A node holding how many times at most a term may be repeated.
+
+    This node has the following variables:
+
+    - Those inherited from |ASTNode|;
+    - ``count`` -- an integer denoting the repetition count.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTTermNode|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTSpaceNode|\ |maybe|, |ASTLiteralNode| = '*', |ASTSpaceNode|\ |maybe|.
+    """
     count = 0
 
     def parse(self, parser):
@@ -774,6 +979,23 @@ class ASTRepetitionNode(ASTNode):
         return str(self.count) + super().__repr__()
 
 class ASTTerminalNode(ASTNode):
+    """A node holding a terminal.
+
+    Terminals are sequences of characters that are enclosed by either:
+
+    - ``'``;
+    - ``"``;
+    - ``\```.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTTermNode| |or| |ASTExceptionNode|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTLiteralNode| = '"' | "'" | '`', |ASTTextNode|, |ASTLiteralNode| = '"' |
+    "'" | '`'.
+    """
     def parse(self, parser):
         assert parser.c in parser.TERMINAL_START_SYMBOLS, f"Expected current character to be one of {parser.TERMINAL_START_SYMBOLS}, not {parser.c}"
 
@@ -794,6 +1016,29 @@ class ASTTerminalNode(ASTNode):
         return f"Terminal:{super().__str__()}"
 
 class ASTRepeatNode(ASTNode):
+    """ A node holding a repeatable group.
+
+    A group enclosed by either:
+
+    - ``{`` or ``(/``;
+    - ``}`` or ``/)``.
+
+    May be repeated any number of times, including none.
+
+    This node has the following variables:
+
+    - Those inherited from |ASTNode|;
+    - ``lit`` -- the first literal node in the children list.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTTermNode| |or| |ASTExceptionNode|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTLiteralNode| = '{' | '(/', |ASTDefinitionListNode|, |ASTLiteralNode| =
+    '}' | '/)'.
+    """
     lit = None
 
     def parse(self, parser):
@@ -833,6 +1078,29 @@ class ASTRepeatNode(ASTNode):
         return f"Repeat:{super().__str__()}"
 
 class ASTOptionNode(ASTNode):
+    """ A node holding an optional group.
+
+    A group enclosed by either:
+
+    - ``[`` or ``(:``;
+    - ``]`` or ``:)``.
+
+    May occur either once, or not at all.
+
+    This node has the following variables:
+
+    - Those inherited from |ASTNode|;
+    - ``lit`` -- the first literal node in the children list.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTTermNode| |or| |ASTExceptionNode|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTLiteralNode| = '[' | '(:', |ASTDefinitionListNode|, |ASTLiteralNode| =
+    ']' | ':)'.
+    """
     lit = None
 
     def parse(self, parser):
@@ -870,6 +1138,24 @@ class ASTOptionNode(ASTNode):
         return f"Option:{super().__str__()}"
 
 class ASTGroupNode(ASTNode):
+    """ A node holding a group.
+
+    A group enclosed by ``(`` and ``)`` can be used to make what are essentially
+    inline non-terminals.
+
+    This node has the following variables:
+
+    - Those inherited from |ASTNode|;
+    - ``lit`` -- the first literal node in the children list.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTTermNode| |or| |ASTExceptionNode|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTLiteralNode| = '(' |ASTDefinitionListNode|, |ASTLiteralNode| = ')'.
+    """
     lit = None
 
     def parse(self, parser):
@@ -904,6 +1190,19 @@ class ASTGroupNode(ASTNode):
         return f"Group:{super().__str__()}"
 
 class ASTSpecialNode(ASTNode):
+    """ A node holding a special sequence.
+
+    A sequence of text enclosed by ``?`` is considered a special sequence. The
+    EBNF spec leaves this as room for defining extension to the language.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |ASTTermNode| |or| |ASTExceptionNode|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |ASTLiteralNode| = '?', |ASTTextNode|, |ASTLiteralNode| = '?'.
+    """
     def parse(self, parser):
         self.startLine = parser.line
         self.startColumn = parser.column
@@ -921,6 +1220,7 @@ class ASTSpecialNode(ASTNode):
         return f"Special:{super().__str__()}"
 
 class ASTEmptyNode(ASTNode):
+    """A node that holds nothing."""
     def parse(self, parser):
         self.startLine = parser.line
         self.startColumn = parser.column
@@ -929,6 +1229,7 @@ class ASTEmptyNode(ASTNode):
         return self
 
 class ASTEmptyTerm(ASTTermNode):
+    """A node that is used to represent an empty string as a term."""
     def parse(self, parser):
         self.startLine = parser.line
         self.startColumn = parser.column
