@@ -115,7 +115,7 @@ class AST:
 
         #Print the text that the first child of the root was created from, the
         #first child will probably be an ASTCommentNode or ASTRuleNode.
-        print(repr(ast.root.children[0]))
+        print(repr(ast1.root.children[0]))
 
         #The height and maxDegree can be used to calculate the worst case size
         #for:

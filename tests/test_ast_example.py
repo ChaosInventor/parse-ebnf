@@ -20,7 +20,7 @@ def test_example_ast(ebnf_path):
     with StringIO('rule = term | another term;') as f:
         ast2.parse(f.read)
 
-    print(repr(ast.root.children[0]))
+    print(repr(ast1.root.children[0]))
 
     file.close()
 
