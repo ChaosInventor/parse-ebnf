@@ -1,0 +1,16 @@
+name: build-docs
+on:
+  workflow_dispatch:
+  push:
+    branches: 'main'
+    paths:
+      'docs/'
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ammaraskar/sphinx-action@master
+        with:
+          docs-folder: "docs/"
+      
