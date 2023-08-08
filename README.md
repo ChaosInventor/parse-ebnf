@@ -62,8 +62,8 @@ for child in ast.root.children:
 
 ## Documentation
 
-Check the docs/ directory, using sphinx you can build your own html or pdf
-version. Currently working on github page to host the docs.
+Check the [github page](https://chaosinventor.github.io/parse-ebnf/) that
+holds the documentation.
 
 ## License
 
