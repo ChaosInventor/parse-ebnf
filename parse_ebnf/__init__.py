@@ -309,6 +309,9 @@ class ASTTextNode(ASTNode):
 
     This node has the following variables:
 
+    - Variables inherited from |ASTNode|;
+    - ``data`` -- the text content of the node, a string.
+
     .. rubric:: :ref:`Parent type <parentEntry>`
 
     |ASTTerminalNode| |or| |ASTSpaceNode|.
@@ -316,9 +319,6 @@ class ASTTextNode(ASTNode):
     .. rubric:: :ref:`Children <childrenEntry>`
 
     ``None`` -- These nodes and their derived classes are always leaf nodes.
-
-    - Variables inherited from |ASTNode|;
-    - ``data`` -- the text content of the node, a string.
 
     """
     data = ''
