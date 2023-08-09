@@ -4,7 +4,10 @@ name: Deploy Sphinx with GitHub Pages dependencies preinstalled
 on:
   push:
     branches: ["main"]
-    paths: "docs/**"
+    paths:
+      - "docs/**"
+      #In case there is a change in the docstrings that the docs use
+      - "parse_ebnf/**"
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
