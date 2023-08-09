@@ -4,7 +4,7 @@ name: Deploy Sphinx with GitHub Pages dependencies preinstalled
 on:
   push:
     branches: ["main"]
-    paths: "docs/"
+    paths: "docs/**"
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
