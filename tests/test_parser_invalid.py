@@ -6,7 +6,7 @@ import pytest
 import glob
 from parse_ebnf import AST, ASTRootNode
 
-pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("resources/invalid/*"))
+pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/invalid/*"))
 
 def test_parser_invalid(ebnf_path):
     ebnf = open(ebnf_path, 'r')
