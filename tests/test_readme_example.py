@@ -5,7 +5,7 @@
 import pytest
 import glob
 
-pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("resources/valid/*"))
+pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
 
 def test_example(ebnf_path):
 
