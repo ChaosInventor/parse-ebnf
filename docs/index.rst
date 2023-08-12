@@ -5,7 +5,7 @@ Introduction
 ------------
 
 parse-ebnf if a parser for EBNF, Extended Backus-Naur Form. Give it an EBNF
-input and it'll generate a parser tree.
+input and it'll generate a parse tree.
 
 .. note:: This package does not generate a parser for the described grammar.
 
