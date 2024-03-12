@@ -79,7 +79,7 @@ class AST:
 
     Contains the following variables:
 
-    - ``root``, the root node of the tree, an instance of :py:class:`ASTRootNode`;
+    - ``root``, the root node of the tree, an instance of :py:class:`Root`;
     - ``count``, the number of nodes in the tree;
     - ``height``, the height of the tree;
     - ``maxDegree``, the maximum number of children that a single node has in
@@ -114,7 +114,7 @@ class AST:
         #You now have two useable parse trees, ast1 and ast2
 
         #Print the text that the first child of the root was created from, the
-        #first child will probably be an ASTCommentNode or ASTRuleNode.
+        #first child will probably be an CommentNode or ASTRule.
         print(repr(ast1.root.children[0]))
 
         #The height and maxDegree can be used to calculate the worst case size
@@ -153,7 +153,7 @@ class AST:
         write(str(self))
 
     def __init__(self):
-        self.root = ASTRootNode()
+        self.root = Root()
         self.count = 1
         self.height = 0
         self.maxDegree = 0
@@ -165,7 +165,7 @@ class AST:
         return f'AST{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{str(self.root)}'
 
 
-class ASTNode:
+class Node:
     """Base class of all AST nodes.
 
     AST nodes differ only in what nodes are their ``parent`` and which nodes
@@ -177,9 +177,9 @@ class ASTNode:
     Contains the following variables:
 
     - ``parent`` -- the parent node of this node. It is ``None`` only for
-      |ASTRootNode|.
+      |Root|.
     - ``children`` -- a list of this node's children. Empty only for instance of
-      |ASTTextNode|.
+      |Text|.
     - ``depth`` -- an integer denoting how deep a node is in the tree. The root
       is defined as being at depth 0, it's children at depth 1, etc.
     - ``startLine`` -- the line where the text that this node is comprised of
@@ -265,7 +265,7 @@ class ASTNode:
         self.addChild(node, parser.ast)
         return node.parse(parser)
 
-class ASTRootNode(ASTNode):
+class Root(Node):
     """ The root AST node.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
@@ -274,7 +274,7 @@ class ASTRootNode(ASTNode):
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    (|ASTProductNode| |or| |ASTCommentNode| |or| |ASTSpaceNode|)\ |any|
+    (|Product| |or| |Comment| |or| |Space|)\ |any|
 
     """
     def parse(self, parser):
@@ -283,12 +283,12 @@ class ASTRootNode(ASTNode):
 
         while len(parser.c) > 0:
             if parser.c == '(':
-                self._parseNode(parser, ASTCommentNode())
+                self._parseNode(parser, Comment())
                 parser.read(1)
             elif parser.c.isalpha():
-                self._parseNode(parser, ASTProductNode())
+                self._parseNode(parser, Product())
             elif parser.c.isspace():
-                self._parseNode(parser, ASTSpaceNode())
+                self._parseNode(parser, Space())
             else:
                 raise SyntaxError(f"Unexpected character, {parser.c}, at file level at {parser.line},{parser.column}")
 
@@ -299,7 +299,7 @@ class ASTRootNode(ASTNode):
     def __str__(self):
         return f"Root:{super().__str__()}"
 
-class ASTTextNode(ASTNode):
+class Text(Node):
     """ Base class for leaf nodes.
 
     This node is a base class for all leaf nodes, nodes whose ``children`` list
@@ -309,12 +309,12 @@ class ASTTextNode(ASTNode):
 
     This node has the following variables:
 
-    - Variables inherited from |ASTNode|;
+    - Variables inherited from |Node|;
     - ``data`` -- the text content of the node, a string.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTTerminalNode| |or| |ASTSpaceNode|.
+    |Terminal| |or| |Space|.
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
@@ -343,7 +343,7 @@ class ASTTextNode(ASTNode):
         return self.data
     def __str__(self):
         return f"Text({self.data}):{super().__str__()}"
-class ASTCommentNode(ASTTextNode):
+class Comment(Text):
     """Nodes holding EBNF comments.
 
     Comments in EBNF are enclosed by ``(*``, ``*)`` pairs. Nesting is allowed.
@@ -354,11 +354,11 @@ class ASTCommentNode(ASTTextNode):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTRootNode|
+    |Root|
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``[]``, leaf node, see |ASTTextNode|.
+    ``[]``, leaf node, see |Text|.
 
     """
     def parse(self, parser):
@@ -404,8 +404,8 @@ class ASTCommentNode(ASTTextNode):
     def __repr__(self):
         return f"(*{self.data}*)"
     def __str__(self):
-        return f"Comment({self.data}):{ASTNode.__str__(self)}"
-class ASTSpaceNode(ASTTextNode):
+        return f"Comment({self.data}):{Node.__str__(self)}"
+class Space(Text):
     """Node holding whitespace.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
@@ -414,7 +414,7 @@ class ASTSpaceNode(ASTTextNode):
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``None``, it is a leaf node, see |ASTTextNode|.
+    ``None``, it is a leaf node, see |Text|.
     """
     def parse(self, parser):
         assert parser.c.isspace(), f"Expected the current character to be a space, not {parser.c}"
@@ -434,8 +434,8 @@ class ASTSpaceNode(ASTTextNode):
     def __init__(self, data=''):
         super().__init__(None, data)
     def  __str__(self):
-        return f"Space:{ASTNode.__str__(self)}"
-class ASTIdentifierNode(ASTTextNode):
+        return f"Space:{Node.__str__(self)}"
+class Identifier(Text):
     """Node holding an identifier.
 
     Identifiers are alphanumeric string that do not start with a number. They
@@ -444,11 +444,11 @@ class ASTIdentifierNode(ASTTextNode):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTProductNode| |or| |ASTTermNode| |or| |ASTExceptionNode|.
+    |Product| |or| |Term| |or| |Exception|.
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``None``, it is a leaf node, see |ASTTextNode|.
+    ``None``, it is a leaf node, see |Text|.
     """
     def parse(self, parser):
         assert parser.c.isalpha(), f"Expected current character to be alphabetic, got {parser.c} instead."
@@ -483,7 +483,7 @@ class ASTIdentifierNode(ASTTextNode):
                 break
 
         if len(ret) > 0:
-            space = ASTSpaceNode(ret[::-1])
+            space = Space(ret[::-1])
 
             space.startLine = self.endLine
             space.startColumn = self.endColumn + 1
@@ -506,8 +506,8 @@ class ASTIdentifierNode(ASTTextNode):
             return None
 
     def  __str__(self):
-        return f"Identifier({self.data}):{ASTNode.__str__(self)}"
-class ASTLiteralNode(ASTTextNode):
+        return f"Identifier({self.data}):{Node.__str__(self)}"
+class Literal(Text):
     """Node holding one or more characters.
 
     The actual character sequence depends on the parent. The parent nodes have
@@ -515,14 +515,14 @@ class ASTLiteralNode(ASTTextNode):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTProductNode| |or| |ASTDefinitionListNode| |or| |ASTDefinitionNode| |or|
-    |ASTTermNode| |or| |ASTExceptionNode| |or| |ASTRepetitionNode| |or|
-    |ASTTerminalNode| |or| |ASTRepeatNode| |or| |ASTOptionNode| |or|
-    |ASTGroupNode| |or| |ASTSpaceNode|.
+    |Product| |or| |DefinitionList| |or| |Definition| |or|
+    |Term| |or| |Exception| |or| |Repetition| |or|
+    |Terminal| |or| |Repeat| |or| |Option| |or|
+    |Group| |or| |Space|.
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``None``, it is a leaf node, see |ASTTextNode|.
+    ``None``, it is a leaf node, see |Text|.
     """
     def parse(self, parser):
         self.startLine = parser.line
@@ -571,9 +571,9 @@ class ASTLiteralNode(ASTTextNode):
         super().__init__(data)
         self.literals = literals
     def __str__(self):
-        return f"Literal({self.data}):{ASTNode.__str__(self)}"
+        return f"Literal({self.data}):{Node.__str__(self)}"
 
-class ASTProductNode(ASTNode):
+class Product(Node):
     """ A node holding a product.
 
     A product is a grammar rule, those of the form:
@@ -582,21 +582,21 @@ class ASTProductNode(ASTNode):
 
     This node has the following variables:
 
-    - Those inherited from |ASTNode|;
-    - ``lhs``, the left hand side of the rule, the first |ASTIdentifierNode| of
+    - Those inherited from |Node|;
+    - ``lhs``, the left hand side of the rule, the first |Identifier| of
       the children;
-    - ``rhs``, the right had side of the rule, the first |ASTDefinitionListNode|
+    - ``rhs``, the right had side of the rule, the first |DefinitionList|
       of the children.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTRootNode|.
+    |Root|.
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTSpaceNode|\ |maybe|, |ASTIdentifierNode|, |ASTSpaceNode|\ |maybe|,
-    |ASTLiteralNode| = '=', |ASTSpaceNode|\ |maybe|, |ASTDefinitionListNode|,
-    |ASTSpaceNode|\ |maybe|, |ASTLiteralNode| = ';' | '.'
+    |Space|\ |maybe|, |Identifier|, |Space|\ |maybe|,
+    |Literal| = '=', |Space|\ |maybe|, |DefinitionList|,
+    |Space|\ |maybe|, |Literal| = ';' | '.'
     """
     lhs = None
     rhs = None
@@ -607,21 +607,21 @@ class ASTProductNode(ASTNode):
         self.startLine = parser.line
         self.startColumn = parser.column
 
-        ident = self._parseNode(parser, ASTIdentifierNode())
+        ident = self._parseNode(parser, Identifier())
 
         if (space := ident.trim(parser)) != None:
             self.addChild(space, parser.ast)
 
-        self._parseNode(parser, ASTLiteralNode(['=']))
+        self._parseNode(parser, Literal(['=']))
 
         if parser.c.isspace():
-            self._parseNode(parser, ASTSpaceNode())
+            self._parseNode(parser, Space())
 
-        self._parseNode(parser, ASTDefinitionListNode())
+        self._parseNode(parser, DefinitionList())
 
         self.endLine = parser.line
         self.endColumn = parser.column
-        self._parseNode(parser, ASTLiteralNode(parser.PRODUCT_TERMINATOR_SYMBOLS))
+        self._parseNode(parser, Literal(parser.PRODUCT_TERMINATOR_SYMBOLS))
 
         return self
 
@@ -638,7 +638,7 @@ class ASTProductNode(ASTNode):
     def __str__(self):
         return f"Product:{super().__str__()}"
 
-class ASTDefinitionListNode(ASTNode):
+class DefinitionList(Node):
     """ Node containing a list of definitions.
 
     Definitions are the lists of concatenations. Definitions are placed
@@ -647,13 +647,13 @@ class ASTDefinitionListNode(ASTNode):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTProductNode| |or| |ASTRepetitionNode| |or| |ASTOptionNode| |or|
-    |ASTGroupNode|.
+    |Product| |or| |Repetition| |or| |Option| |or|
+    |Group|.
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTSpaceNode|\ |maybe|, (|ASTDefinitionNode|, |ASTSpaceNode|\ |maybe|,
-    |ASTLiteralNode| = '|' | '/' | '!')\ |any|, |ASTSpaceNode|\ |maybe|.
+    |Space|\ |maybe|, (|Definition|, |Space|\ |maybe|,
+    |Literal| = '|' | '/' | '!')\ |any|, |Space|\ |maybe|.
     """
     def parse(self, parser):
         self.startLine = parser.line
@@ -661,17 +661,17 @@ class ASTDefinitionListNode(ASTNode):
 
         while True:
             if parser.c.isspace():
-                self._parseNode(parser, ASTSpaceNode())
+                self._parseNode(parser, Space())
 
-            definition = self._parseNode(parser, ASTDefinitionNode())
+            definition = self._parseNode(parser, Definition())
 
             if parser.c.isspace():
-                self._parseNode(parser, ASTSpaceNode())
+                self._parseNode(parser, Space())
 
             self.endLine = parser.line
             self.endColumn = parser.column - 1
             if parser.c in parser.DEFINITION_SEPARATORS:
-                lit = ASTLiteralNode(parser.DEFINITION_SEPARATORS + ['/)']).parse(parser)
+                lit = Literal(parser.DEFINITION_SEPARATORS + ['/)']).parse(parser)
 
                 #Special case for alternate '}'
                 if lit.data == '/)':
@@ -688,7 +688,7 @@ class ASTDefinitionListNode(ASTNode):
     def __str__(self):
         return f"Definition list:{super().__str__()}"
 
-class ASTDefinitionNode(ASTNode):
+class Definition(Node):
     """A node holding a definition.
 
     A definition is the list of concatenations on the right hand side of a rule.
@@ -696,12 +696,12 @@ class ASTDefinitionNode(ASTNode):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTDefinitionListNode|
+    |DefinitionList|
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTSpaceNode|\ |maybe|, ((|ASTTermNode| |or| |ASTEmptyTerm|), |ASTSpaceNode|\ |maybe|,
-    |ASTLiteralNode| = ',', |ASTSpaceNode|\ |maybe|)\ |any|.
+    |Space|\ |maybe|, ((|Term| |or| |EmptyTerm|), |Space|\ |maybe|,
+    |Literal| = ',', |Space|\ |maybe|)\ |any|.
 
     """
     def parse(self, parser):
@@ -713,15 +713,15 @@ class ASTDefinitionNode(ASTNode):
             if len(parser.c) == 0:
                 raise SyntaxError(f"Unexpected EOF in definition started at {self.startLine},{self.startColumn}")
             if parser.c.isspace():
-                self._parseNode(parser, ASTSpaceNode())
+                self._parseNode(parser, Space())
             elif parser.c.isalpha() or parser.c.isnumeric() or parser.c in parser.TERM_START_SYMBOLS:
                 if term != None:
                     raise SyntaxError(f"Start of another term at {parser.line},{parser.column} before previous term at {term.startLine},{term.startColumn} properly terminated")
-                term = self._parseNode(parser, ASTTermNode())
+                term = self._parseNode(parser, Term())
             elif parser.c == ',':
                 if term == None:
-                    self._parseNode(parser, ASTEmptyTerm())
-                self._parseNode(parser, ASTLiteralNode([',']))
+                    self._parseNode(parser, EmptyTerm())
+                self._parseNode(parser, Literal([',']))
                 term = None
             else:
                 #Let the definition list handle it
@@ -734,7 +734,7 @@ class ASTDefinitionNode(ASTNode):
     def __str__(self):
         return f"Definition:{super().__str__()}"
 
-class ASTTermNode(ASTNode):
+class Term(Node):
     """ Node holding a single term.
 
     Terms are values that a rule can take, they may be either:
@@ -745,31 +745,31 @@ class ASTTermNode(ASTNode):
 
     This node has the following variables:
 
-    - Those inherited from |ASTNode|;
-    - ``repetition`` -- an |ASTRepetitionNode|, the one in the children list;
+    - Those inherited from |Node|;
+    - ``repetition`` -- an |Repetition|, the one in the children list;
     - ``primary`` -- the term that this node is defined as, the one in the
       children list, may either be:
 
-        - |ASTTerminalNode|;
-        - |ASTIdentifierNode|;
-        - |ASTGroupNode|;
-        - |ASTRepeatNode|;
-        - |ASTOptionNode|;
-        - |ASTSpecialNode|.
+        - |Terminal|;
+        - |Identifier|;
+        - |Group|;
+        - |Repeat|;
+        - |Option|;
+        - |Special|.
 
-    - ``exception`` -- an |ASTExceptionNode|, the one in the children list.
+    - ``exception`` -- an |Exception|, the one in the children list.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTDefinitionNode|
+    |Definition|
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTSpaceNode|\ |maybe|, |ASTRepetitionNode|\ |maybe|, |ASTSpaceNode|\
-    |maybe|, (|ASTIdentifierNode| |or| |ASTTerminalNode| |or| |ASTRepeatNode|
-    |or| |ASTOptionNode| |or| |ASTSpecialNode| |or| |ASTGroupNode| |or|
-    |ASTEmptyNode|), (|ASTSpaceNode|\ |maybe|, |ASTLiteralNode| = '-',
-    |ASTExceptionNode|)\ |maybe|.
+    |Space|\ |maybe|, |Repetition|\ |maybe|, |Space|\
+    |maybe|, (|Identifier| |or| |Terminal| |or| |Repeat|
+    |or| |Option| |or| |Special| |or| |Group| |or|
+    |Empty|), (|Space|\ |maybe|, |Literal| = '-',
+    |Exception|)\ |maybe|.
 
     """
     repetition = None
@@ -782,64 +782,64 @@ class ASTTermNode(ASTNode):
 
         while True:
             if parser.c.isspace():
-                self._parseNode(parser, ASTSpaceNode())
+                self._parseNode(parser, Space())
             elif parser.c.isalpha():
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, ASTIdentifierNode())
+                self.primary = self._parseNode(parser, Identifier())
                 if (space := self.primary.trim(parser)) != None:
                     self.addChild(space, parser.ast)
             elif parser.c.isnumeric():
                 if self.repetition != None:
                     raise SyntaxError(f"Term can only have one repetition, another defined at {parser.line},{parser.column}, last one at {self.repetition.startLine},{self.repetition.startColumn}")
-                self.repetition = self._parseNode(parser, ASTRepetitionNode())
+                self.repetition = self._parseNode(parser, Repetition())
             elif parser.c == '-':
                 if self.exception != None:
                     raise SyntaxError(f"Unexpected '-', term started at {self.startLine},{self.startColumn} already has an exception defined at {self.exception.startLine},{self.exception.startColumn}")
-                self._parseNode(parser, ASTLiteralNode(['-']))
-                self.exception = self._parseNode(parser, ASTExceptionNode())
+                self._parseNode(parser, Literal(['-']))
+                self.exception = self._parseNode(parser, Exception())
             elif parser.c in parser.TERMINAL_START_SYMBOLS:
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
 
-                self.primary = self._parseNode(parser, ASTTerminalNode())
+                self.primary = self._parseNode(parser, Terminal())
             elif parser.c == '{':
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, ASTRepeatNode())
+                self.primary = self._parseNode(parser, Repeat())
             elif parser.c == '[':
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, ASTOptionNode())
+                self.primary = self._parseNode(parser, Option())
             elif parser.c == '?':
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, ASTSpecialNode())
+                self.primary = self._parseNode(parser, Special())
             elif parser.c == '(':
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                lit = ASTLiteralNode(parser.BRACKET_START_SYMBOLS).parse(parser)
+                lit = Literal(parser.BRACKET_START_SYMBOLS).parse(parser)
                 if lit.data == '(':
-                    self.primary = self._parseNode(parser, ASTGroupNode(lit))
+                    self.primary = self._parseNode(parser, Group(lit))
                 if lit.data == '(/':
-                    self.primary = self._parseNode(parser, ASTRepeatNode(lit))
+                    self.primary = self._parseNode(parser, Repeat(lit))
                 if lit.data == '(:':
-                    self.primary = self._parseNode(parser, ASTOptionNode(lit))
+                    self.primary = self._parseNode(parser, Option(lit))
             else:
                 #Let the definition handle it
                 break
 
         if self.primary == None:
-            self.primary = self._parseNode(parser, ASTEmptyNode())
+            self.primary = self._parseNode(parser, Empty())
 
         self.endLine = self.children[-1].endLine
         self.endColumn = self.children[-1].endColumn
         return self
 
     def __init__(self, ast=None, repetition=None, primary=None, exception=None):
-        assert repetition == None or isinstance(repetition, ASTRepetitionNode), f"Repetition must be either None or an int, got {repetition}"
-        assert isinstance(primary, ASTNode) or primary == None, "A term must have a primary"
-        assert isinstance(exception, ASTTermNode) or exception == None, "Exception must be another term"
+        assert repetition == None or isinstance(repetition, Repetition), f"Repetition must be either None or an int, got {repetition}"
+        assert isinstance(primary, Node) or primary == None, "A term must have a primary"
+        assert isinstance(exception, Term) or exception == None, "Exception must be another term"
         if primary != None or exception != None:
             assert isinstance(ast, AST), "Expected an abstract syntax tree"
 
@@ -856,7 +856,7 @@ class ASTTermNode(ASTNode):
     def __str__(self):
         return f"Term:{super().__str__()}"
 
-class ASTExceptionNode(ASTNode):
+class Exception(Node):
     """ A node holding the exception to a term.
 
     Exceptions are written after a term's primary, prefixed with a ``-``.
@@ -865,13 +865,13 @@ class ASTExceptionNode(ASTNode):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTTermNode|
+    |Term|
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTSpaceNode|\ |maybe|, (|ASTIdentifierNode| |or| |ASTTerminalNode| |or|
-    |ASTRepeatNode| |or| |ASTOptionNode| |or| |ASTSpecialNode| |or|
-    |ASTGroupNode| |or| |ASTEmptyNode|).
+    |Space|\ |maybe|, (|Identifier| |or| |Terminal| |or|
+    |Repeat| |or| |Option| |or| |Special| |or|
+    |Group| |or| |Empty|).
 
     """
     primary = None
@@ -882,53 +882,53 @@ class ASTExceptionNode(ASTNode):
 
         while True:
             if parser.c.isspace():
-                self._parseNode(parser, ASTSpaceNode())
+                self._parseNode(parser, Space())
             elif parser.c.isalpha():
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, ASTIdentifierNode())
+                self.primary = self._parseNode(parser, Identifier())
                 if (space := self.primary.trim(parser)) != None:
                     self.addChild(space, parser.ast)
             elif parser.c in parser.TERMINAL_START_SYMBOLS:
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
 
-                self.primary = self._parseNode(parser, ASTTerminalNode())
+                self.primary = self._parseNode(parser, Terminal())
             elif parser.c == '{':
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, ASTRepeatNode())
+                self.primary = self._parseNode(parser, Repeat())
             elif parser.c == '[':
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, ASTOptionNode())
+                self.primary = self._parseNode(parser, Option())
             elif parser.c == '?':
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, ASTSpecialNode())
+                self.primary = self._parseNode(parser, Special())
             elif parser.c == '(':
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                lit = ASTLiteralNode(parser.BRACKET_START_SYMBOLS).parse(parser)
+                lit = Literal(parser.BRACKET_START_SYMBOLS).parse(parser)
                 if lit.data == '(':
-                    self.primary = self._parseNode(parser, ASTGroupNode(lit))
+                    self.primary = self._parseNode(parser, Group(lit))
                 if lit.data == '(/':
-                    self.primary = self._parseNode(parser, ASTRepeatNode(lit))
+                    self.primary = self._parseNode(parser, Repeat(lit))
                 if lit.data == '(:':
-                    self.primary = self._parseNode(parser, ASTOptionNode(lit))
+                    self.primary = self._parseNode(parser, Option(lit))
             else:
                 #Let the definition handle it
                 break
 
         if self.primary == None:
-            self.primary = self._parseNode(parser, ASTEmptyNode())
+            self.primary = self._parseNode(parser, Empty())
 
         self.endLine = self.children[-1].endLine
         self.endColumn = self.children[-1].endColumn
         return self
 
     def __init__(self, ast=None, primary=None):
-        assert isinstance(primary, ASTNode) or primary == None, "A term must have a primary"
+        assert isinstance(primary, Node) or primary == None, "A term must have a primary"
         if primary != None:
             assert isinstance(ast, AST), "Expected an abstract syntax tree"
 
@@ -940,21 +940,21 @@ class ASTExceptionNode(ASTNode):
     def __str__(self):
         return f"Exception:{super().__str__()}"
 
-class ASTRepetitionNode(ASTNode):
+class Repetition(Node):
     """A node holding how many times at most a term may be repeated.
 
     This node has the following variables:
 
-    - Those inherited from |ASTNode|;
+    - Those inherited from |Node|;
     - ``count`` -- an integer denoting the repetition count.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTTermNode|
+    |Term|
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTSpaceNode|\ |maybe|, |ASTLiteralNode| = '*', |ASTSpaceNode|\ |maybe|.
+    |Space|\ |maybe|, |Literal| = '*', |Space|\ |maybe|.
     """
     count = 0
 
@@ -970,11 +970,11 @@ class ASTRepetitionNode(ASTNode):
         self.count = int(num)
 
         if parser.c.isspace():
-            self._parseNode(parser, ASTSpaceNode())
+            self._parseNode(parser, Space())
 
         self.endLine = parser.line
         self.endColumn = parser.column
-        self._parseNode(parser, ASTLiteralNode(['*']))
+        self._parseNode(parser, Literal(['*']))
 
         return self
 
@@ -986,7 +986,7 @@ class ASTRepetitionNode(ASTNode):
     def __repr__(self):
         return str(self.count) + super().__repr__()
 
-class ASTTerminalNode(ASTNode):
+class Terminal(Node):
     """A node holding a terminal.
 
     Terminals are sequences of characters that are enclosed by either:
@@ -997,11 +997,11 @@ class ASTTerminalNode(ASTNode):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTTermNode| |or| |ASTExceptionNode|.
+    |Term| |or| |Exception|.
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTLiteralNode| = '"' | "'" | '`', |ASTTextNode|, |ASTLiteralNode| = '"' |
+    |Literal| = '"' | "'" | '`', |Text|, |Literal| = '"' |
     "'" | '`'.
     """
     def parse(self, parser):
@@ -1010,20 +1010,20 @@ class ASTTerminalNode(ASTNode):
         self.startLine = parser.line
         self.startColumn = parser.column
 
-        lit = self._parseNode(parser, ASTLiteralNode([parser.c]))
-        self._parseNode(parser, ASTTextNode(lit.data))
+        lit = self._parseNode(parser, Literal([parser.c]))
+        self._parseNode(parser, Text(lit.data))
 
         self.endLine = parser.line
         self.endColumn = parser.column
 
-        self._parseNode(parser, ASTLiteralNode([lit.data]))
+        self._parseNode(parser, Literal([lit.data]))
 
         return self
 
     def __str__(self):
         return f"Terminal:{super().__str__()}"
 
-class ASTRepeatNode(ASTNode):
+class Repeat(Node):
     """ A node holding a repeatable group.
 
     A group enclosed by either:
@@ -1035,16 +1035,16 @@ class ASTRepeatNode(ASTNode):
 
     This node has the following variables:
 
-    - Those inherited from |ASTNode|;
+    - Those inherited from |Node|;
     - ``lit`` -- the first literal node in the children list.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTTermNode| |or| |ASTExceptionNode|
+    |Term| |or| |Exception|
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTLiteralNode| = '{' | '(/', |ASTDefinitionListNode|, |ASTLiteralNode| =
+    |Literal| = '{' | '(/', |DefinitionList|, |Literal| =
     '}' | '/)'.
     """
     lit = None
@@ -1054,16 +1054,16 @@ class ASTRepeatNode(ASTNode):
         self.startColumn = parser.column
 
         if self.lit == None:
-            self._parseNode(parser, ASTLiteralNode(['{']))
+            self._parseNode(parser, Literal(['{']))
         else:
             self.addChild(self.lit, parser.ast)
             self.startLine = self.lit.startLine
             self.startColumn = self.lit.startColumn
 
         if parser.c.isspace():
-            self._parseNode(parser, ASTSpaceNode())
+            self._parseNode(parser, Space())
 
-        defList, lit = self._parseNode(parser, ASTDefinitionListNode())
+        defList, lit = self._parseNode(parser, DefinitionList())
 
         if lit != None:
             self.endLine = lit.endLine
@@ -1073,19 +1073,19 @@ class ASTRepeatNode(ASTNode):
             self.endLine = parser.line
             self.endColumn = parser.column
             #No need to check for '/)' since the definition list would have parsed it if it were there
-            self._parseNode(parser, ASTLiteralNode(['}']))
+            self._parseNode(parser, Literal(['}']))
 
         return self
 
     def __init__(self, lit=None):
-        assert isinstance(lit, ASTLiteralNode) or lit == None
+        assert isinstance(lit, Literal) or lit == None
         super().__init__()
         self.lit = lit
 
     def __str__(self):
         return f"Repeat:{super().__str__()}"
 
-class ASTOptionNode(ASTNode):
+class Option(Node):
     """ A node holding an optional group.
 
     A group enclosed by either:
@@ -1097,16 +1097,16 @@ class ASTOptionNode(ASTNode):
 
     This node has the following variables:
 
-    - Those inherited from |ASTNode|;
+    - Those inherited from |Node|;
     - ``lit`` -- the first literal node in the children list.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTTermNode| |or| |ASTExceptionNode|
+    |Term| |or| |Exception|
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTLiteralNode| = '[' | '(:', |ASTDefinitionListNode|, |ASTLiteralNode| =
+    |Literal| = '[' | '(:', |DefinitionList|, |Literal| =
     ']' | ':)'.
     """
     lit = None
@@ -1116,21 +1116,21 @@ class ASTOptionNode(ASTNode):
         self.startColumn = parser.column
 
         if self.lit == None:
-            self._parseNode(parser, ASTLiteralNode(['[']))
+            self._parseNode(parser, Literal(['[']))
         else:
             self.addChild(self.lit, parser.ast)
             self.startLine = self.lit.startLine
             self.startColumn = self.lit.startColumn
 
         if parser.c.isspace():
-            self._parseNode(parser, ASTSpaceNode())
+            self._parseNode(parser, Space())
 
-        defList = self._parseNode(parser, ASTDefinitionListNode())
+        defList = self._parseNode(parser, DefinitionList())
 
         self.endLine = parser.line
         self.endColumn = parser.column
 
-        lit =self._parseNode(parser, ASTLiteralNode([']', ':)']))
+        lit =self._parseNode(parser, Literal([']', ':)']))
 
         if lit.data == ':)':
             self.endColumn += 1
@@ -1138,14 +1138,14 @@ class ASTOptionNode(ASTNode):
         return self
 
     def __init__(self, lit=None):
-        assert isinstance(lit, ASTLiteralNode) or lit == None
+        assert isinstance(lit, Literal) or lit == None
         super().__init__()
         self.lit = lit
 
     def __str__(self):
         return f"Option:{super().__str__()}"
 
-class ASTGroupNode(ASTNode):
+class Group(Node):
     """ A node holding a group.
 
     A group enclosed by ``(`` and ``)`` can be used to make what are essentially
@@ -1153,16 +1153,16 @@ class ASTGroupNode(ASTNode):
 
     This node has the following variables:
 
-    - Those inherited from |ASTNode|;
+    - Those inherited from |Node|;
     - ``lit`` -- the first literal node in the children list.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTTermNode| |or| |ASTExceptionNode|
+    |Term| |or| |Exception|
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTLiteralNode| = '(' |ASTDefinitionListNode|, |ASTLiteralNode| = ')'.
+    |Literal| = '(' |DefinitionList|, |Literal| = ')'.
     """
     lit = None
 
@@ -1171,33 +1171,33 @@ class ASTGroupNode(ASTNode):
         self.startColumn = parser.column
 
         if self.lit == None:
-            self._parseNode(parser, ASTLiteralNode(['(']))
+            self._parseNode(parser, Literal(['(']))
         else:
             self.addChild(self.lit, parser.ast)
             self.startLine = self.lit.startLine
             self.startColumn = self.lit.startColumn
 
         if parser.c.isspace():
-            self._parseNode(parser, ASTSpaceNode())
+            self._parseNode(parser, Space())
 
-        defList = self._parseNode(parser, ASTDefinitionListNode())
+        defList = self._parseNode(parser, DefinitionList())
 
         self.endLine = parser.line
         self.endColumn = parser.column
 
-        self._parseNode(parser, ASTLiteralNode([')']))
+        self._parseNode(parser, Literal([')']))
 
         return self
 
     def __init__(self, lit=None):
-        assert isinstance(lit, ASTLiteralNode) or lit == None
+        assert isinstance(lit, Literal) or lit == None
         super().__init__()
         self.lit = lit
 
     def __str__(self):
         return f"Group:{super().__str__()}"
 
-class ASTSpecialNode(ASTNode):
+class Special(Node):
     """ A node holding a special sequence.
 
     A sequence of text enclosed by ``?`` is considered a special sequence. The
@@ -1205,29 +1205,29 @@ class ASTSpecialNode(ASTNode):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |ASTTermNode| |or| |ASTExceptionNode|.
+    |Term| |or| |Exception|.
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |ASTLiteralNode| = '?', |ASTTextNode|, |ASTLiteralNode| = '?'.
+    |Literal| = '?', |Text|, |Literal| = '?'.
     """
     def parse(self, parser):
         self.startLine = parser.line
         self.startColumn = parser.column
 
-        self._parseNode(parser, ASTLiteralNode(['?']))
-        self._parseNode(parser, ASTTextNode('?'))
+        self._parseNode(parser, Literal(['?']))
+        self._parseNode(parser, Text('?'))
 
         self.endLine = parser.line
         self.endColumn = parser.column
 
-        self._parseNode(parser, ASTLiteralNode(['?']))
+        self._parseNode(parser, Literal(['?']))
 
         return self
     def __str__(self):
         return f"Special:{super().__str__()}"
 
-class ASTEmptyNode(ASTNode):
+class Empty(Node):
     """A node that holds nothing."""
     def parse(self, parser):
         self.startLine = parser.line
@@ -1236,13 +1236,13 @@ class ASTEmptyNode(ASTNode):
         self.endColumn = parser.column - 1
         return self
 
-class ASTEmptyTerm(ASTTermNode):
+class EmptyTerm(Term):
     """A node that is used to represent an empty string as a term."""
     def parse(self, parser):
         self.startLine = parser.line
         self.startColumn = parser.column
         self.endLine = parser.line
         self.endColumn = parser.column - 1
-        self._parseNode(parser, ASTEmptyNode())
+        self._parseNode(parser, Empty())
         return self
 

@@ -4,7 +4,7 @@
 
 import pytest
 import glob
-from parse_ebnf import AST, ASTRootNode
+from parse_ebnf import AST, Root
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
 
@@ -37,7 +37,7 @@ def test_ast(ebnf_path):
     finally:
         print(str(ast))
 
-    assert isinstance(ast.root, ASTRootNode)
+    assert isinstance(ast.root, Root)
 
     class NodeCounter:
         def __init__(self, root):

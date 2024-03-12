@@ -61,7 +61,7 @@ Finally we have 3 suffixes:
 - \+ -- the node type or group occurs at least once, but may occur an additional
   unbounded finite amount of time in the list.
 
-|ASTLiteralNode|\ s also get another suffix:
+|Literal|\ s also get another suffix:
 
 ``= 'string' | 'other string'``
 
@@ -75,23 +75,23 @@ Tree classes
 
 The |AST| always begins with the ``root`` node:
 
-.. autoclass:: parse_ebnf.ASTRootNode
-.. autoclass:: parse_ebnf.ASTTextNode
-.. autoclass:: parse_ebnf.ASTCommentNode
-.. autoclass:: parse_ebnf.ASTSpaceNode
-.. autoclass:: parse_ebnf.ASTProductNode
-.. autoclass:: parse_ebnf.ASTIdentifierNode
-.. autoclass:: parse_ebnf.ASTLiteralNode
-.. autoclass:: parse_ebnf.ASTDefinitionListNode
-.. autoclass:: parse_ebnf.ASTDefinitionNode
-.. autoclass:: parse_ebnf.ASTTermNode
-.. autoclass:: parse_ebnf.ASTRepetitionNode
-.. autoclass:: parse_ebnf.ASTTerminalNode
-.. autoclass:: parse_ebnf.ASTRepeatNode
-.. autoclass:: parse_ebnf.ASTOptionNode
-.. autoclass:: parse_ebnf.ASTSpecialNode
-.. autoclass:: parse_ebnf.ASTGroupNode
-.. autoclass:: parse_ebnf.ASTEmptyNode
-.. autoclass:: parse_ebnf.ASTExceptionNode
-.. autoclass:: parse_ebnf.ASTEmptyTerm
+.. autoclass:: parse_ebnf.Root
+.. autoclass:: parse_ebnf.Text
+.. autoclass:: parse_ebnf.Comment
+.. autoclass:: parse_ebnf.Space
+.. autoclass:: parse_ebnf.Product
+.. autoclass:: parse_ebnf.Identifier
+.. autoclass:: parse_ebnf.Literal
+.. autoclass:: parse_ebnf.DefinitionList
+.. autoclass:: parse_ebnf.Definition
+.. autoclass:: parse_ebnf.Term
+.. autoclass:: parse_ebnf.Repetition
+.. autoclass:: parse_ebnf.Terminal
+.. autoclass:: parse_ebnf.Repeat
+.. autoclass:: parse_ebnf.Option
+.. autoclass:: parse_ebnf.Special
+.. autoclass:: parse_ebnf.Group
+.. autoclass:: parse_ebnf.Empty
+.. autoclass:: parse_ebnf.Exception
+.. autoclass:: parse_ebnf.EmptyTerm
 

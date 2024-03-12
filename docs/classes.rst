@@ -4,13 +4,13 @@ Classes
 To use this package, you'll only really need two classes:
 
 - |AST|
-- |ASTNode|
+- |Node|
 
-Use |AST| to parse your input, and |ASTNode| and it's
+Use |AST| to parse your input, and |Node| and it's
 :doc:`derived classes <tree>` to traverse the tree.
 
 .. autoclass:: parse_ebnf.AST
    :members: parse, unparse, write
 
-.. autoclass:: parse_ebnf.ASTNode
+.. autoclass:: parse_ebnf.Node
 

@@ -46,11 +46,11 @@ Quick start
     #This will visit each node in the parse tree and print the line where its text begins
     DepthFirst(ast.root, lambda node: print(node.startLine))
 
-    from parse_ebnf import ASTCommentNode
+    from parse_ebnf import Comment
 
     #Finds each comment in the file and prints its text content
     for child in ast.root.children:
-        if isinstance(child, ASTCommentNode):
+        if isinstance(child, Comment):
             print(child.data)
 
 Reference
