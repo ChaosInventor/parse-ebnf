@@ -21,12 +21,12 @@ Quick start
 
 .. code-block:: python
 
-    from parse_ebnf import AST
+    from parse_ebnf import PT
 
     #Your EBNF file goes here
     ebnf = open('grammar.ebnf', 'r')
 
-    ast = AST()
+    ast = PT()
 
     try:
         #Will raise SyntaxError on error with an error message describing what went wrong

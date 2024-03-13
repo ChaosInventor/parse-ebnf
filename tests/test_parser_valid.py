@@ -4,7 +4,7 @@
 
 import pytest
 import glob
-from parse_ebnf import AST
+from parse_ebnf import PT
 from parse_ebnf.nodes import Root
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
@@ -12,14 +12,14 @@ pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/val
 def test_parser(tmp_path, ebnf_path):
     ebnf = open(ebnf_path, 'r')
 
-    ast = AST()
+    pt = PT()
     try:
-        ast.parse(ebnf.read)
+        pt.parse(ebnf.read)
     finally:
-        print(str(ast))
+        print(str(pt))
 
     tmpFile = open(tmp_path / 'tmp', 'w+')
-    ast.unparse(tmpFile.write)
+    pt.unparse(tmpFile.write)
 
     ebnf.seek(0)
     tmpFile.seek(0)
@@ -29,16 +29,16 @@ def test_parser(tmp_path, ebnf_path):
     tmpFile.close()
     ebnf.close()
 
-def test_ast(ebnf_path):
+def test_pt(ebnf_path):
     ebnf = open(ebnf_path, 'r')
 
-    ast = AST()
+    pt = PT()
     try:
-        ast.parse(ebnf.read)
+        pt.parse(ebnf.read)
     finally:
-        print(str(ast))
+        print(str(pt))
 
-    assert isinstance(ast.root, Root)
+    assert isinstance(pt.root, Root)
 
     class NodeCounter:
         def __init__(self, root):
@@ -54,22 +54,22 @@ def test_ast(ebnf_path):
             for child in node:
                 self.countNodes(child, depth+1)
 
-    counter = NodeCounter(ast.root)
+    counter = NodeCounter(pt.root)
 
-    assert counter.height == ast.height
-    assert counter.degree == ast.maxDegree
-    assert counter.count == ast.count
+    assert counter.height == pt.height
+    assert counter.degree == pt.maxDegree
+    assert counter.count == pt.count
 
     ebnf.close()
 
-def test_ast_coordinates(ebnf_path):
+def test_pt_coordinates(ebnf_path):
     ebnf = open(ebnf_path, 'r')
 
-    ast = AST()
+    pt = PT()
     try:
-        ast.parse(ebnf.read)
+        pt.parse(ebnf.read)
     except:
-        print(str(ast))
+        print(str(pt))
 
     class CoordinateChecker:
         def __init__(self, root, ebnf):
@@ -114,7 +114,7 @@ def test_ast_coordinates(ebnf_path):
             for child in node:
                 self.check(child)
 
-    checker = CoordinateChecker(ast.root, ebnf)
+    checker = CoordinateChecker(pt.root, ebnf)
 
     ebnf.close()
 

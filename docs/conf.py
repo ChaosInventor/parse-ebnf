@@ -24,7 +24,7 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 rst_prolog = """
-.. |AST| replace:: :py:class:`AST <parse_ebnf.AST>`
+.. |PT| replace:: :py:class:`PT <parse_ebnf.PT>`
 .. |Node| replace:: :py:class:`Node <parse_ebnf.nodes.Node>`
 .. |Root| replace:: :py:class:`Root <parse_ebnf.nodes.Root>`
 .. |Text| replace:: :py:class:`Text <parse_ebnf.nodes.Text>`

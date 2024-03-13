@@ -4,7 +4,7 @@
 
 import pytest
 import glob
-from parse_ebnf import AST
+from parse_ebnf import PT
 from parse_ebnf.nodes import Root
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/invalid/*"))
@@ -12,11 +12,11 @@ pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/inv
 def test_parser_invalid(ebnf_path):
     ebnf = open(ebnf_path, 'r')
 
-    ast = AST()
+    pt = PT()
     with pytest.raises(SyntaxError):
-        ast.parse(ebnf.read)
-        #In case a syntax error did not occur, print the AST for inspection
-        print(str(ast))
+        pt.parse(ebnf.read)
+        #In case a syntax error did not occur, print the PT for inspection
+        print(str(pt))
 
     ebnf.close()
 

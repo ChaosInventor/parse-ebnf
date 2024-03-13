@@ -8,19 +8,19 @@ import glob
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
 
 def test_example_ast(ebnf_path):
-    from parse_ebnf import AST
+    from parse_ebnf import PT
     from io import StringIO
 
-    ast1 = AST()
-    ast2 = AST()
+    pt1 = PT()
+    pt2 = PT()
 
     file = open(ebnf_path, 'r')
 
-    ast1.parse(file.read);
+    pt1.parse(file.read);
     with StringIO('rule = term | another term;') as f:
-        ast2.parse(f.read)
+        pt2.parse(f.read)
 
-    print(repr(ast1.root.children[0]))
+    print(repr(pt1.root.children[0]))
 
     file.close()
 

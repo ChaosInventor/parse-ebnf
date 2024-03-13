@@ -1,9 +1,9 @@
 class Node:
-    """Base class of all AST nodes.
+    """Base class of all PT nodes.
 
-    AST nodes differ only in what nodes are their ``parent`` and which nodes
+    PT nodes differ only in what nodes are their ``parent`` and which nodes
     are their ``children``, more info at the :doc:`tree structure <tree>`.
-    This node type in particular is not used in the |AST|, it only serves as a
+    This node type in particular is not used in the |PT|, it only serves as a
     base class for all other node types. Using ``isinstance`` you can resolve
     a node's type.
 
@@ -48,14 +48,14 @@ class Node:
     def unparse(self, write):
         write(repr(self))
 
-    def addChild(self, node, ast):
+    def addChild(self, node, pt):
         self.children.append(node)
         node.parent = self
         node.depth = self.depth + 1
 
-        ast.count += 1
-        ast.height = node.depth if node.depth > ast.height else ast.height
-        ast.maxDegree = len(self.children) if len(self.children) > ast.maxDegree else ast.maxDegree
+        pt.count += 1
+        pt.height = node.depth if node.depth > pt.height else pt.height
+        pt.maxDegree = len(self.children) if len(self.children) > pt.maxDegree else pt.maxDegree
 
         return node
     def write(self, write, depth=0):
@@ -95,11 +95,11 @@ class Node:
         return ret
 
     def _parseNode(self, parser, node):
-        self.addChild(node, parser.ast)
+        self.addChild(node, parser.pt)
         return node.parse(parser)
 
 class Root(Node):
-    """ The root AST node.
+    """ The root PT node.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
@@ -323,12 +323,12 @@ class Identifier(Text):
 
             space.endLine = space.startLine
             space.endColumn = 0
-            onLastLine = True
+            onLptLine = True
             for c in ret:
                 if c == '\n':
                     space.endLine += 1
-                    onLastLine = False
-                elif onLastLine:
+                    onLptLine = False
+                elif onLptLine:
                     space.endColumn += 1
 
             if space.startLine == space.endLine:
@@ -443,7 +443,7 @@ class Product(Node):
         ident = self._parseNode(parser, Identifier())
 
         if (space := ident.trim(parser)) != None:
-            self.addChild(space, parser.ast)
+            self.addChild(space, parser.pt)
 
         self._parseNode(parser, Literal(['=']))
 
@@ -458,16 +458,16 @@ class Product(Node):
 
         return self
 
-    def __init__(self, lhs=None, rhs=None, ast=None):
+    def __init__(self, lhs=None, rhs=None, pt=None):
         super().__init__()
         if lhs != None or rhs != None:
-            assert isinstance(ast, AST), f"Expected an abstract syntax tree, not a {ast.__class__}"
+            assert isinstance(pt, PT), f"Expected an abstract syntax tree, not a {pt.__class__}"
         if lhs != None:
             self.lhs = lhs
-            self.addChild(lhs, ast)
+            self.addChild(lhs, pt)
         if rhs != None:
             self.rhs = rhs
-            self.addChild(rhs, ast)
+            self.addChild(rhs, pt)
     def __str__(self):
         return f"Product:{super().__str__()}"
 
@@ -512,7 +512,7 @@ class DefinitionList(Node):
                     self.endColumn = parser.column - 3
                     return self, lit
                 else:
-                    self.addChild(lit, parser.ast)
+                    self.addChild(lit, parser.pt)
             else:
                 break
 
@@ -621,10 +621,10 @@ class Term(Node):
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
                 self.primary = self._parseNode(parser, Identifier())
                 if (space := self.primary.trim(parser)) != None:
-                    self.addChild(space, parser.ast)
+                    self.addChild(space, parser.pt)
             elif parser.c.isnumeric():
                 if self.repetition != None:
-                    raise SyntaxError(f"Term can only have one repetition, another defined at {parser.line},{parser.column}, last one at {self.repetition.startLine},{self.repetition.startColumn}")
+                    raise SyntaxError(f"Term can only have one repetition, another defined at {parser.line},{parser.column}, lpt one at {self.repetition.startLine},{self.repetition.startColumn}")
                 self.repetition = self._parseNode(parser, Repetition())
             elif parser.c == '-':
                 if self.exception != None:
@@ -669,18 +669,18 @@ class Term(Node):
         self.endColumn = self.children[-1].endColumn
         return self
 
-    def __init__(self, ast=None, repetition=None, primary=None, exception=None):
+    def __init__(self, pt=None, repetition=None, primary=None, exception=None):
         assert repetition == None or isinstance(repetition, Repetition), f"Repetition must be either None or an int, got {repetition}"
         assert isinstance(primary, Node) or primary == None, "A term must have a primary"
         assert isinstance(exception, Term) or exception == None, "Exception must be another term"
         if primary != None or exception != None:
-            assert isinstance(ast, AST), "Expected an abstract syntax tree"
+            assert isinstance(pt, PT), "Expected an abstract syntax tree"
 
         super().__init__()
         self.repetition = repetition
         self.primary = primary
         if primary != None:
-            self.addChild(primary, ast)
+            self.addChild(primary, pt)
 
         self.exception = exception
         if exception != None:
@@ -721,7 +721,7 @@ class Exception(Node):
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
                 self.primary = self._parseNode(parser, Identifier())
                 if (space := self.primary.trim(parser)) != None:
-                    self.addChild(space, parser.ast)
+                    self.addChild(space, parser.pt)
             elif parser.c in parser.TERMINAL_START_SYMBOLS:
                 if self.primary != None:
                     raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
@@ -760,15 +760,15 @@ class Exception(Node):
         self.endColumn = self.children[-1].endColumn
         return self
 
-    def __init__(self, ast=None, primary=None):
+    def __init__(self, pt=None, primary=None):
         assert isinstance(primary, Node) or primary == None, "A term must have a primary"
         if primary != None:
-            assert isinstance(ast, AST), "Expected an abstract syntax tree"
+            assert isinstance(pt, PT), "Expected an abstract syntax tree"
 
         super().__init__()
         self.primary = primary
         if primary != None:
-            self.addChild(primary, ast)
+            self.addChild(primary, pt)
 
     def __str__(self):
         return f"Exception:{super().__str__()}"
@@ -889,7 +889,7 @@ class Repeat(Node):
         if self.lit == None:
             self._parseNode(parser, Literal(['{']))
         else:
-            self.addChild(self.lit, parser.ast)
+            self.addChild(self.lit, parser.pt)
             self.startLine = self.lit.startLine
             self.startColumn = self.lit.startColumn
 
@@ -901,7 +901,7 @@ class Repeat(Node):
         if lit != None:
             self.endLine = lit.endLine
             self.endColumn = lit.endColumn
-            self.addChild(lit, parser.ast)
+            self.addChild(lit, parser.pt)
         else:
             self.endLine = parser.line
             self.endColumn = parser.column
@@ -951,7 +951,7 @@ class Option(Node):
         if self.lit == None:
             self._parseNode(parser, Literal(['[']))
         else:
-            self.addChild(self.lit, parser.ast)
+            self.addChild(self.lit, parser.pt)
             self.startLine = self.lit.startLine
             self.startColumn = self.lit.startColumn
 
@@ -1006,7 +1006,7 @@ class Group(Node):
         if self.lit == None:
             self._parseNode(parser, Literal(['(']))
         else:
-            self.addChild(self.lit, parser.ast)
+            self.addChild(self.lit, parser.pt)
             self.startLine = self.lit.startLine
             self.startColumn = self.lit.startColumn
 

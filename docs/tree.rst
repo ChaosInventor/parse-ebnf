@@ -73,7 +73,7 @@ See the below documentation for examples.
 Tree classes
 ------------
 
-The |AST| always begins with the ``root`` node:
+The |PT| always begins with the ``root`` node:
 
 .. autoclass:: parse_ebnf.nodes.Root
 .. autoclass:: parse_ebnf.nodes.Text

@@ -27,22 +27,22 @@ pip install parse-ebnf
 ## Quick start
 
 ```python
-from parse_ebnf import AST
+from parse_ebnf import PT
 
 #Your EBNF file goes here
 ebnf = open('grammar.ebnf', 'r')
 
-ast = AST()
+pt = PT()
 
 try:
     #Will raise SyntaxError on error with an error message describing what went wrong
-    ast.parse(ebnf.read) #You need to pass in a function that returns n characters where n is given as the first parameter.
+    pt.parse(ebnf.read) #You need to pass in a function that returns n characters where n is given as the first parameter.
 finally:
     #Even after an error a partial tree will be generated.
     #str gives a text version of the parse tree(meant for debugging), while repr gives the text that it was produced from.
-    print(str(ast))
+    print(str(pt))
 
-print(f'Parsed the file creating a tree with {ast.count} nodes, height of {ast.height}. Each node has at MOST {ast.maxDegree} children.')
+print(f'Parsed the file creating a tree with {pt.count} nodes, height of {pt.height}. Each node has at MOST {pt.maxDegree} children.')
 
 def DepthFirst(node, func):
     func(node)
@@ -50,12 +50,12 @@ def DepthFirst(node, func):
         DepthFirst(child, func)
 
 #This will visit each node in the parse tree and print the line where its text begins
-DepthFirst(ast.root, lambda node: print(node.startLine))
+DepthFirst(pt.root, lambda node: print(node.startLine))
 
 from parse_ebnf.nodes import Comment
 
 #Finds each comment in the file and prints its text content
-for child in ast.root.children:
+for child in pt.root.children:
     if isinstance(child, Comment):
         print(child.data)
 ```

@@ -9,7 +9,7 @@ class ParserState:
 
     Keeps track of the current line and column, `line` and `column`
     respectively, as well as the currently read string, `c`. It also has a
-    reference to the AST it belongs, `ast`, and to the read function `readFunc`
+    reference to the PT it belongs, `pt`, and to the read function `readFunc`
 
     Has lists containing constant characters that are used as terminals those
     being:
@@ -28,7 +28,7 @@ class ParserState:
 
     They help by maintaining `line`, `column` and `c`.
     """
-    ast = None
+    pt = None
     readFunc = None
     c = ''
     line = 0
@@ -63,19 +63,19 @@ class ParserState:
 
         return self.c
 
-    def __init__(self, read, ast):
-        """ Create a new parser state for the AST `ast` with the read function
+    def __init__(self, read, pt):
+        """ Create a new parser state for the PT `pt` with the read function
         `read`.
         """
-        assert isinstance(ast, AST), "Expected an AST obejct"
+        assert isinstance(pt, PT), "Expected an PT obejct"
         assert read != None, "Expected a read function"
-        self.ast = ast
+        self.pt = pt
         self.readFunc = read
         self.line = 1
         self. column = 0
         self.read(1)
 
-class AST:
+class PT:
     """A parse tree for EBNF.
 
     Contains the following variables:
@@ -100,23 +100,23 @@ class AST:
 
     .. code-block:: python
 
-        from parse_ebnf import AST
+        from parse_ebnf import PT
         from io import StringIO
 
-        ast1 = AST()
-        ast2 = AST()
+        pt1 = PT()
+        pt2 = PT()
 
         file = open('your-ebnf-file.ebnf', 'r')
 
-        ast1.parse(file.read);
+        pt1.parse(file.read);
         with StringIO('rule = term | another term;') as f:
-            ast2.parse(f.read)
+            pt2.parse(f.read)
 
-        #You now have two useable parse trees, ast1 and ast2
+        #You now have two useable parse trees, pt1 and pt2
 
         #Print the text that the first child of the root was created from, the
-        #first child will probably be an CommentNode or ASTRule.
-        print(repr(ast1.root.children[0]))
+        #first child will probably be an CommentNode or PTRule.
+        print(repr(pt1.root.children[0]))
 
         #The height and maxDegree can be used to calculate the worst case size
         #for:
@@ -155,7 +155,6 @@ class AST:
 
     def __init__(self):
         self.root = nodes.Root()
-        print(nodes)
         self.count = 1
         self.height = 0
         self.maxDegree = 0
@@ -164,5 +163,5 @@ class AST:
         return repr(self.root)
     def __str__(self):
         """Returns a textual representation of this tree meant for debugging."""
-        return f'AST{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{str(self.root)}'
+        return f'PT{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{str(self.root)}'
 
