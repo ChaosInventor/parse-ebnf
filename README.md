@@ -52,7 +52,7 @@ def DepthFirst(node, func):
 #This will visit each node in the parse tree and print the line where its text begins
 DepthFirst(ast.root, lambda node: print(node.startLine))
 
-from parse_ebnf import Comment
+from parse_ebnf.nodes import Comment
 
 #Finds each comment in the file and prints its text content
 for child in ast.root.children:

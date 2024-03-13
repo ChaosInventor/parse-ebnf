@@ -4,7 +4,8 @@
 
 import pytest
 import glob
-from parse_ebnf import AST, Root
+from parse_ebnf import AST
+from parse_ebnf.nodes import Root
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/invalid/*"))
 

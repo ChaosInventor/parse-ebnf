@@ -1,0 +1,1081 @@
+class Node:
+    """Base class of all AST nodes.
+
+    AST nodes differ only in what nodes are their ``parent`` and which nodes
+    are their ``children``, more info at the :doc:`tree structure <tree>`.
+    This node type in particular is not used in the |AST|, it only serves as a
+    base class for all other node types. Using ``isinstance`` you can resolve
+    a node's type.
+
+    Contains the following variables:
+
+    - ``parent`` -- the parent node of this node. It is ``None`` only for
+      |Root|.
+    - ``children`` -- a list of this node's children. Empty only for instance of
+      |Text|.
+    - ``depth`` -- an integer denoting how deep a node is in the tree. The root
+      is defined as being at depth 0, it's children at depth 1, etc.
+    - ``startLine`` -- the line where the text that this node is comprised of
+      starts, inclusively. Counting starts from 1, and is incremented each time
+      a newline is encountered in the input;
+    - ``startColumn`` -- the column where the text that this node is comprised
+      of starts, inclusively. Counting starts at 1, and in incremented every
+      character. Each newline resets the counter to 0;
+    - ``endLine`` -- like ``startLine`` except that this is where the text ends,
+      exclusively;
+    - ``endColumn`` -- like ``startColumn`` except that this is where the text
+      ends, exclusively.
+
+    The following always holds for coordinates:
+
+    - `startLine` >= 0
+    - `endLine` >= 0
+    - `startColumn` >= 0
+    - `startLine` <= `endLine`
+    - if `startColumn` > `endColumn`: repr(node) == '' else `endColumn` >= 0
+
+    .. note :: The end coordinates also take into account child nodes. The
+       children's text is also counted as the parent's text.
+    """
+    parent = None
+    children = []
+    startLine = 0
+    startColumn = 0
+    endLine = 0
+    endColumn = 0
+    depth = 0
+
+    def unparse(self, write):
+        write(repr(self))
+
+    def addChild(self, node, ast):
+        self.children.append(node)
+        node.parent = self
+        node.depth = self.depth + 1
+
+        ast.count += 1
+        ast.height = node.depth if node.depth > ast.height else ast.height
+        ast.maxDegree = len(self.children) if len(self.children) > ast.maxDegree else ast.maxDegree
+
+        return node
+    def write(self, write, depth=0):
+        write(str(self))
+        if len(self.children) > 0:
+            write(':\n')
+            for child in self:
+                for _ in range(depth):
+                    write('\t')
+                child.write(write, depth+1)
+        else:
+            write('\n')
+
+    def __init__(self, startLine=0, startColumn=0, endLine=0, endColumn=0):
+        self.parent = None
+        self.children = []
+        self.startLine = startLine
+        self.startColumn = startColumn
+        self.endLine = endLine
+        self.endColumn = endColumn
+        self.depth = 0
+
+    def __iter__(self):
+        return self.children.__iter__()
+    def __str__(self):
+        ret = f"{self.startLine},{self.startColumn}-{self.endLine},{self.endColumn}\n"
+        if len(self.children) > 0:
+            for child in self:
+                for i in range(child.depth):
+                    ret += '\t'
+                ret += str(child)
+        return ret
+    def __repr__(self):
+        ret = ''
+        for child in self:
+            ret += repr(child)
+        return ret
+
+    def _parseNode(self, parser, node):
+        self.addChild(node, parser.ast)
+        return node.parse(parser)
+
+class Root(Node):
+    """ The root AST node.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    ``None``
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    (|Product| |or| |Comment| |or| |Space|)\ |any|
+
+    """
+    def parse(self, parser):
+        self.startLine = 1
+        self.startColumn = 1
+
+        while len(parser.c) > 0:
+            if parser.c == '(':
+                self._parseNode(parser, Comment())
+                parser.read(1)
+            elif parser.c.isalpha():
+                self._parseNode(parser, Product())
+            elif parser.c.isspace():
+                self._parseNode(parser, Space())
+            else:
+                raise SyntaxError(f"Unexpected character, {parser.c}, at file level at {parser.line},{parser.column}")
+
+        self.endLine = parser.line
+        self.endColumn = parser.column
+        return self
+
+    def __str__(self):
+        return f"Root:{super().__str__()}"
+
+class Text(Node):
+    """ Base class for leaf nodes.
+
+    This node is a base class for all leaf nodes, nodes whose ``children`` list
+    is empty.
+
+    .. note:: Only leafs nodes contain text data in the tree.
+
+    This node has the following variables:
+
+    - Variables inherited from |Node|;
+    - ``data`` -- the text content of the node, a string.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Terminal| |or| |Space|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None`` -- These nodes and their derived classes are always leaf nodes.
+
+    """
+    data = ''
+
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        while parser.c != self.start:
+            self.data += parser.c
+            parser.readNoEOF(1, f"EOF before termination of text started at {self.startLine},{self.startColumn}")
+
+        self.endLine = parser.line
+        self.endColumn = parser.column - 1
+        return self
+
+    def __init__(self, start=None, data=''):
+        super().__init__()
+        self.data = data
+        self.start = start
+    def __repr__(self):
+        return self.data
+    def __str__(self):
+        return f"Text({self.data}):{super().__str__()}"
+class Comment(Text):
+    """Nodes holding EBNF comments.
+
+    Comments in EBNF are enclosed by ``(*``, ``*)`` pairs. Nesting is allowed.
+
+    The ``data`` string does **NOT** contain the enclosing comment markers.
+    Nested comment markers are included however. ``repr`` returns a proper
+    comment string.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Root|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``[]``, leaf node, see |Text|.
+
+    """
+    def parse(self, parser):
+        assert parser.c == '(', f"Expected current character to be '(', not {parser.c}."
+
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        parser.read(1)
+        if parser.c != '*':
+            raise SyntaxError(f"Expected '*' at {parser.line},{parser.column} since previous was a '('")
+
+        parser.read(1)
+        #Keeps track of comment recursion
+        depth = 0
+        #Loop is broken when '*)' is encountered and depth is 0
+        while True:
+            if parser.c == '*':
+                oc = parser.c
+                parser.read(1)
+
+                if parser.c == ')':
+                    if depth <= 0:
+                        break;
+                    else:
+                        depth -= 1
+
+                self.data += oc
+            elif parser.c == '(':
+                self.data += parser.c
+                parser.read(1)
+                if parser.c == '*':
+                    depth += 1
+
+            self.data += parser.c
+            parser.readNoEOF(1, "Commend not terminated before EOF")
+
+        self.endLine = parser.line
+        self.endColumn = parser.column
+
+        return self
+
+    def __repr__(self):
+        return f"(*{self.data}*)"
+    def __str__(self):
+        return f"Comment({self.data}):{Node.__str__(self)}"
+class Space(Text):
+    """Node holding whitespace.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    ``Any``, just about every node that is not a leaf node holds this node.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |Text|.
+    """
+    def parse(self, parser):
+        assert parser.c.isspace(), f"Expected the current character to be a space, not {parser.c}"
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        self.data += parser.c
+        self.endLine = parser.line
+        self.endColumn = parser.column
+        while parser.read(1).isspace():
+            self.data += parser.c
+            self.endLine = parser.line
+            self.endColumn = parser.column
+
+        return self
+
+    def __init__(self, data=''):
+        super().__init__(None, data)
+    def  __str__(self):
+        return f"Space:{Node.__str__(self)}"
+class Identifier(Text):
+    """Node holding an identifier.
+
+    Identifiers are alphanumeric string that do not start with a number. They
+    do not contain trailing or leading whitespace, however they may contain
+    whitespace in the middle.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Product| |or| |Term| |or| |Exception|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |Text|.
+    """
+    def parse(self, parser):
+        assert parser.c.isalpha(), f"Expected current character to be alphabetic, got {parser.c} instead."
+
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        self.data += parser.c
+        self.endLine = parser.line
+        self.endColumn = parser.column
+        parser.read(1)
+        while parser.c.isalpha() or parser.c.isnumeric() or parser.c.isspace():
+            self.data += parser.c
+            self.endLine = parser.line
+            self.endColumn = parser.column
+            parser.read(1)
+
+        return self
+    def trim(self, parser):
+        ret = ''
+        while len(self.data) > 0:
+            if self.data[-1].isspace():
+                ret += self.data[-1]
+                self.data = self.data[:-1]
+                if ret[-1] == '\n':
+                    self.endLine -= 1
+            else:
+                if (line := self.data.rfind('\n')) != -1:
+                    self.endColumn =  len(self.data[line + 1:])
+                else:
+                    self.endColumn = self.startColumn + len(self.data) - 1
+                break
+
+        if len(ret) > 0:
+            space = Space(ret[::-1])
+
+            space.startLine = self.endLine
+            space.startColumn = self.endColumn + 1
+
+            space.endLine = space.startLine
+            space.endColumn = 0
+            onLastLine = True
+            for c in ret:
+                if c == '\n':
+                    space.endLine += 1
+                    onLastLine = False
+                elif onLastLine:
+                    space.endColumn += 1
+
+            if space.startLine == space.endLine:
+                space.endColumn = space.startColumn + len(ret) - 1
+
+            return space
+        else:
+            return None
+
+    def  __str__(self):
+        return f"Identifier({self.data}):{Node.__str__(self)}"
+class Literal(Text):
+    """Node holding one or more characters.
+
+    The actual character sequence depends on the parent. The parent nodes have
+    documentation pertaining to the exact sequence.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Product| |or| |DefinitionList| |or| |Definition| |or|
+    |Term| |or| |Exception| |or| |Repetition| |or|
+    |Terminal| |or| |Repeat| |or| |Option| |or|
+    |Group| |or| |Space|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |Text|.
+    """
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        #Copy literals with index info
+        literals = []
+        i = 0
+        for lit in self.literals:
+            literals.append((lit, i))
+            i += 1
+        match = None
+        self.endLine = parser.line
+        self.endColumn = parser.column
+        while True:
+            lits = literals[::]
+            for literal in lits:
+                if parser.c != literal[0][0]:
+                    literals.remove(literal)
+            if len(literals) == 0:
+                if match != None:
+                    self.data = match
+                    return self
+                else:
+                    break
+            lits = literals[::]
+            for literal in lits:
+                index = literals.index(literal)
+                literals[index] = (literal[0][1:], literal[1])
+                if len(literals[index][0]) == 0:
+                    literals.pop(index)
+                    match = self.literals[literal[1]]
+
+            self.endLine = parser.line
+            self.endColumn = parser.column
+            parser.read(1)
+
+        if match != None:
+            self.data = match
+            return self
+
+        raise SyntaxError(f"Could not match any literals {self.literals} starting at {self.startLine},{self.startColumn}")
+
+    def __init__(self, literals, data=''):
+        assert len(literals) > 0, "Literal cannot be empty"
+        super().__init__(data)
+        self.literals = literals
+    def __str__(self):
+        return f"Literal({self.data}):{Node.__str__(self)}"
+
+class Product(Node):
+    """ A node holding a product.
+
+    A product is a grammar rule, those of the form:
+
+    ``something = another | third, 'a';``
+
+    This node has the following variables:
+
+    - Those inherited from |Node|;
+    - ``lhs``, the left hand side of the rule, the first |Identifier| of
+      the children;
+    - ``rhs``, the right had side of the rule, the first |DefinitionList|
+      of the children.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Root|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Space|\ |maybe|, |Identifier|, |Space|\ |maybe|,
+    |Literal| = '=', |Space|\ |maybe|, |DefinitionList|,
+    |Space|\ |maybe|, |Literal| = ';' | '.'
+    """
+    lhs = None
+    rhs = None
+
+    def parse(self, parser):
+        assert parser.c.isalpha(), f"Expected current character to be alphabetic, got {parser.c} instead."
+
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        ident = self._parseNode(parser, Identifier())
+
+        if (space := ident.trim(parser)) != None:
+            self.addChild(space, parser.ast)
+
+        self._parseNode(parser, Literal(['=']))
+
+        if parser.c.isspace():
+            self._parseNode(parser, Space())
+
+        self._parseNode(parser, DefinitionList())
+
+        self.endLine = parser.line
+        self.endColumn = parser.column
+        self._parseNode(parser, Literal(parser.PRODUCT_TERMINATOR_SYMBOLS))
+
+        return self
+
+    def __init__(self, lhs=None, rhs=None, ast=None):
+        super().__init__()
+        if lhs != None or rhs != None:
+            assert isinstance(ast, AST), f"Expected an abstract syntax tree, not a {ast.__class__}"
+        if lhs != None:
+            self.lhs = lhs
+            self.addChild(lhs, ast)
+        if rhs != None:
+            self.rhs = rhs
+            self.addChild(rhs, ast)
+    def __str__(self):
+        return f"Product:{super().__str__()}"
+
+class DefinitionList(Node):
+    """ Node containing a list of definitions.
+
+    Definitions are the lists of concatenations. Definitions are placed
+    in-between alterations symbols. This node can be seen as holding all
+    alternatives of a rule.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Product| |or| |Repetition| |or| |Option| |or|
+    |Group|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Space|\ |maybe|, (|Definition|, |Space|\ |maybe|,
+    |Literal| = '|' | '/' | '!')\ |any|, |Space|\ |maybe|.
+    """
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        while True:
+            if parser.c.isspace():
+                self._parseNode(parser, Space())
+
+            definition = self._parseNode(parser, Definition())
+
+            if parser.c.isspace():
+                self._parseNode(parser, Space())
+
+            self.endLine = parser.line
+            self.endColumn = parser.column - 1
+            if parser.c in parser.DEFINITION_SEPARATORS:
+                lit = Literal(parser.DEFINITION_SEPARATORS + ['/)']).parse(parser)
+
+                #Special case for alternate '}'
+                if lit.data == '/)':
+                    self.endLine = parser.line
+                    self.endColumn = parser.column - 3
+                    return self, lit
+                else:
+                    self.addChild(lit, parser.ast)
+            else:
+                break
+
+        return self, None
+
+    def __str__(self):
+        return f"Definition list:{super().__str__()}"
+
+class Definition(Node):
+    """A node holding a definition.
+
+    A definition is the list of concatenations on the right hand side of a rule.
+    This node can be seen as having a sequence that a rule needs to match.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |DefinitionList|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Space|\ |maybe|, ((|Term| |or| |EmptyTerm|), |Space|\ |maybe|,
+    |Literal| = ',', |Space|\ |maybe|)\ |any|.
+
+    """
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        term = None
+        while True:
+            if len(parser.c) == 0:
+                raise SyntaxError(f"Unexpected EOF in definition started at {self.startLine},{self.startColumn}")
+            if parser.c.isspace():
+                self._parseNode(parser, Space())
+            elif parser.c.isalpha() or parser.c.isnumeric() or parser.c in parser.TERM_START_SYMBOLS:
+                if term != None:
+                    raise SyntaxError(f"Start of another term at {parser.line},{parser.column} before previous term at {term.startLine},{term.startColumn} properly terminated")
+                term = self._parseNode(parser, Term())
+            elif parser.c == ',':
+                if term == None:
+                    self._parseNode(parser, EmptyTerm())
+                self._parseNode(parser, Literal([',']))
+                term = None
+            else:
+                #Let the definition list handle it
+                break;
+
+        self.endLine = parser.line
+        self.endColumn = parser.column - 1
+        return self
+
+    def __str__(self):
+        return f"Definition:{super().__str__()}"
+
+class Term(Node):
+    """ Node holding a single term.
+
+    Terms are values that a rule can take, they may be either:
+
+    - Terminals;
+    - Non-terminals;
+    - Groups.
+
+    This node has the following variables:
+
+    - Those inherited from |Node|;
+    - ``repetition`` -- an |Repetition|, the one in the children list;
+    - ``primary`` -- the term that this node is defined as, the one in the
+      children list, may either be:
+
+        - |Terminal|;
+        - |Identifier|;
+        - |Group|;
+        - |Repeat|;
+        - |Option|;
+        - |Special|.
+
+    - ``exception`` -- an |Exception|, the one in the children list.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Definition|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Space|\ |maybe|, |Repetition|\ |maybe|, |Space|\
+    |maybe|, (|Identifier| |or| |Terminal| |or| |Repeat|
+    |or| |Option| |or| |Special| |or| |Group| |or|
+    |Empty|), (|Space|\ |maybe|, |Literal| = '-',
+    |Exception|)\ |maybe|.
+
+    """
+    repetition = None
+    primary = None
+    exception = None
+
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        while True:
+            if parser.c.isspace():
+                self._parseNode(parser, Space())
+            elif parser.c.isalpha():
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                self.primary = self._parseNode(parser, Identifier())
+                if (space := self.primary.trim(parser)) != None:
+                    self.addChild(space, parser.ast)
+            elif parser.c.isnumeric():
+                if self.repetition != None:
+                    raise SyntaxError(f"Term can only have one repetition, another defined at {parser.line},{parser.column}, last one at {self.repetition.startLine},{self.repetition.startColumn}")
+                self.repetition = self._parseNode(parser, Repetition())
+            elif parser.c == '-':
+                if self.exception != None:
+                    raise SyntaxError(f"Unexpected '-', term started at {self.startLine},{self.startColumn} already has an exception defined at {self.exception.startLine},{self.exception.startColumn}")
+                self._parseNode(parser, Literal(['-']))
+                self.exception = self._parseNode(parser, Exception())
+            elif parser.c in parser.TERMINAL_START_SYMBOLS:
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+
+                self.primary = self._parseNode(parser, Terminal())
+            elif parser.c == '{':
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                self.primary = self._parseNode(parser, Repeat())
+            elif parser.c == '[':
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                self.primary = self._parseNode(parser, Option())
+            elif parser.c == '?':
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                self.primary = self._parseNode(parser, Special())
+            elif parser.c == '(':
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                lit = Literal(parser.BRACKET_START_SYMBOLS).parse(parser)
+                if lit.data == '(':
+                    self.primary = self._parseNode(parser, Group(lit))
+                if lit.data == '(/':
+                    self.primary = self._parseNode(parser, Repeat(lit))
+                if lit.data == '(:':
+                    self.primary = self._parseNode(parser, Option(lit))
+            else:
+                #Let the definition handle it
+                break
+
+        if self.primary == None:
+            self.primary = self._parseNode(parser, Empty())
+
+        self.endLine = self.children[-1].endLine
+        self.endColumn = self.children[-1].endColumn
+        return self
+
+    def __init__(self, ast=None, repetition=None, primary=None, exception=None):
+        assert repetition == None or isinstance(repetition, Repetition), f"Repetition must be either None or an int, got {repetition}"
+        assert isinstance(primary, Node) or primary == None, "A term must have a primary"
+        assert isinstance(exception, Term) or exception == None, "Exception must be another term"
+        if primary != None or exception != None:
+            assert isinstance(ast, AST), "Expected an abstract syntax tree"
+
+        super().__init__()
+        self.repetition = repetition
+        self.primary = primary
+        if primary != None:
+            self.addChild(primary, ast)
+
+        self.exception = exception
+        if exception != None:
+            self.addChild(exception)
+
+    def __str__(self):
+        return f"Term:{super().__str__()}"
+
+class Exception(Node):
+    """ A node holding the exception to a term.
+
+    Exceptions are written after a term's primary, prefixed with a ``-``.
+    They're terms themselves, except that they don't have exceptions and
+    repetitions.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Term|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Space|\ |maybe|, (|Identifier| |or| |Terminal| |or|
+    |Repeat| |or| |Option| |or| |Special| |or|
+    |Group| |or| |Empty|).
+
+    """
+    primary = None
+
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        while True:
+            if parser.c.isspace():
+                self._parseNode(parser, Space())
+            elif parser.c.isalpha():
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                self.primary = self._parseNode(parser, Identifier())
+                if (space := self.primary.trim(parser)) != None:
+                    self.addChild(space, parser.ast)
+            elif parser.c in parser.TERMINAL_START_SYMBOLS:
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+
+                self.primary = self._parseNode(parser, Terminal())
+            elif parser.c == '{':
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                self.primary = self._parseNode(parser, Repeat())
+            elif parser.c == '[':
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                self.primary = self._parseNode(parser, Option())
+            elif parser.c == '?':
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                self.primary = self._parseNode(parser, Special())
+            elif parser.c == '(':
+                if self.primary != None:
+                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
+                lit = Literal(parser.BRACKET_START_SYMBOLS).parse(parser)
+                if lit.data == '(':
+                    self.primary = self._parseNode(parser, Group(lit))
+                if lit.data == '(/':
+                    self.primary = self._parseNode(parser, Repeat(lit))
+                if lit.data == '(:':
+                    self.primary = self._parseNode(parser, Option(lit))
+            else:
+                #Let the definition handle it
+                break
+
+        if self.primary == None:
+            self.primary = self._parseNode(parser, Empty())
+
+        self.endLine = self.children[-1].endLine
+        self.endColumn = self.children[-1].endColumn
+        return self
+
+    def __init__(self, ast=None, primary=None):
+        assert isinstance(primary, Node) or primary == None, "A term must have a primary"
+        if primary != None:
+            assert isinstance(ast, AST), "Expected an abstract syntax tree"
+
+        super().__init__()
+        self.primary = primary
+        if primary != None:
+            self.addChild(primary, ast)
+
+    def __str__(self):
+        return f"Exception:{super().__str__()}"
+
+class Repetition(Node):
+    """A node holding how many times at most a term may be repeated.
+
+    This node has the following variables:
+
+    - Those inherited from |Node|;
+    - ``count`` -- an integer denoting the repetition count.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Term|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Space|\ |maybe|, |Literal| = '*', |Space|\ |maybe|.
+    """
+    count = 0
+
+    def parse(self, parser):
+        assert parser.c.isnumeric(), f"Expected the current character to be a number, not {parser.c}"
+
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        num = parser.c
+        while parser.readNoEOF(1, "EOF before proper termination of integer").isnumeric():
+            num += parser.c
+        self.count = int(num)
+
+        if parser.c.isspace():
+            self._parseNode(parser, Space())
+
+        self.endLine = parser.line
+        self.endColumn = parser.column
+        self._parseNode(parser, Literal(['*']))
+
+        return self
+
+    def __init__(self, count=0):
+        super().__init__()
+        self.count = count
+    def __str__(self):
+        return f"Repetition({self.count}):{super().__str__()}"
+    def __repr__(self):
+        return str(self.count) + super().__repr__()
+
+class Terminal(Node):
+    """A node holding a terminal.
+
+    Terminals are sequences of characters that are enclosed by either:
+
+    - ``'``;
+    - ``"``;
+    - ``\```.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Term| |or| |Exception|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Literal| = '"' | "'" | '`', |Text|, |Literal| = '"' |
+    "'" | '`'.
+    """
+    def parse(self, parser):
+        assert parser.c in parser.TERMINAL_START_SYMBOLS, f"Expected current character to be one of {parser.TERMINAL_START_SYMBOLS}, not {parser.c}"
+
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        lit = self._parseNode(parser, Literal([parser.c]))
+        self._parseNode(parser, Text(lit.data))
+
+        self.endLine = parser.line
+        self.endColumn = parser.column
+
+        self._parseNode(parser, Literal([lit.data]))
+
+        return self
+
+    def __str__(self):
+        return f"Terminal:{super().__str__()}"
+
+class Repeat(Node):
+    """ A node holding a repeatable group.
+
+    A group enclosed by either:
+
+    - ``{`` or ``(/``;
+    - ``}`` or ``/)``.
+
+    May be repeated any number of times, including none.
+
+    This node has the following variables:
+
+    - Those inherited from |Node|;
+    - ``lit`` -- the first literal node in the children list.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Term| |or| |Exception|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Literal| = '{' | '(/', |DefinitionList|, |Literal| =
+    '}' | '/)'.
+    """
+    lit = None
+
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        if self.lit == None:
+            self._parseNode(parser, Literal(['{']))
+        else:
+            self.addChild(self.lit, parser.ast)
+            self.startLine = self.lit.startLine
+            self.startColumn = self.lit.startColumn
+
+        if parser.c.isspace():
+            self._parseNode(parser, Space())
+
+        defList, lit = self._parseNode(parser, DefinitionList())
+
+        if lit != None:
+            self.endLine = lit.endLine
+            self.endColumn = lit.endColumn
+            self.addChild(lit, parser.ast)
+        else:
+            self.endLine = parser.line
+            self.endColumn = parser.column
+            #No need to check for '/)' since the definition list would have parsed it if it were there
+            self._parseNode(parser, Literal(['}']))
+
+        return self
+
+    def __init__(self, lit=None):
+        assert isinstance(lit, Literal) or lit == None
+        super().__init__()
+        self.lit = lit
+
+    def __str__(self):
+        return f"Repeat:{super().__str__()}"
+
+class Option(Node):
+    """ A node holding an optional group.
+
+    A group enclosed by either:
+
+    - ``[`` or ``(:``;
+    - ``]`` or ``:)``.
+
+    May occur either once, or not at all.
+
+    This node has the following variables:
+
+    - Those inherited from |Node|;
+    - ``lit`` -- the first literal node in the children list.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Term| |or| |Exception|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Literal| = '[' | '(:', |DefinitionList|, |Literal| =
+    ']' | ':)'.
+    """
+    lit = None
+
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        if self.lit == None:
+            self._parseNode(parser, Literal(['[']))
+        else:
+            self.addChild(self.lit, parser.ast)
+            self.startLine = self.lit.startLine
+            self.startColumn = self.lit.startColumn
+
+        if parser.c.isspace():
+            self._parseNode(parser, Space())
+
+        defList = self._parseNode(parser, DefinitionList())
+
+        self.endLine = parser.line
+        self.endColumn = parser.column
+
+        lit =self._parseNode(parser, Literal([']', ':)']))
+
+        if lit.data == ':)':
+            self.endColumn += 1
+
+        return self
+
+    def __init__(self, lit=None):
+        assert isinstance(lit, Literal) or lit == None
+        super().__init__()
+        self.lit = lit
+
+    def __str__(self):
+        return f"Option:{super().__str__()}"
+
+class Group(Node):
+    """ A node holding a group.
+
+    A group enclosed by ``(`` and ``)`` can be used to make what are essentially
+    inline non-terminals.
+
+    This node has the following variables:
+
+    - Those inherited from |Node|;
+    - ``lit`` -- the first literal node in the children list.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Term| |or| |Exception|
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Literal| = '(' |DefinitionList|, |Literal| = ')'.
+    """
+    lit = None
+
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        if self.lit == None:
+            self._parseNode(parser, Literal(['(']))
+        else:
+            self.addChild(self.lit, parser.ast)
+            self.startLine = self.lit.startLine
+            self.startColumn = self.lit.startColumn
+
+        if parser.c.isspace():
+            self._parseNode(parser, Space())
+
+        defList = self._parseNode(parser, DefinitionList())
+
+        self.endLine = parser.line
+        self.endColumn = parser.column
+
+        self._parseNode(parser, Literal([')']))
+
+        return self
+
+    def __init__(self, lit=None):
+        assert isinstance(lit, Literal) or lit == None
+        super().__init__()
+        self.lit = lit
+
+    def __str__(self):
+        return f"Group:{super().__str__()}"
+
+class Special(Node):
+    """ A node holding a special sequence.
+
+    A sequence of text enclosed by ``?`` is considered a special sequence. The
+    EBNF spec leaves this as room for defining extension to the language.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Term| |or| |Exception|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    |Literal| = '?', |Text|, |Literal| = '?'.
+    """
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+
+        self._parseNode(parser, Literal(['?']))
+        self._parseNode(parser, Text('?'))
+
+        self.endLine = parser.line
+        self.endColumn = parser.column
+
+        self._parseNode(parser, Literal(['?']))
+
+        return self
+    def __str__(self):
+        return f"Special:{super().__str__()}"
+
+class Empty(Node):
+    """A node that holds nothing."""
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+        self.endLine = parser.line
+        self.endColumn = parser.column - 1
+        return self
+
+class EmptyTerm(Term):
+    """A node that is used to represent an empty string as a term."""
+    def parse(self, parser):
+        self.startLine = parser.line
+        self.startColumn = parser.column
+        self.endLine = parser.line
+        self.endColumn = parser.column - 1
+        self._parseNode(parser, Empty())
+        return self
+

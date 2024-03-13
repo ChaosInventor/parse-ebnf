@@ -75,23 +75,23 @@ Tree classes
 
 The |AST| always begins with the ``root`` node:
 
-.. autoclass:: parse_ebnf.Root
-.. autoclass:: parse_ebnf.Text
-.. autoclass:: parse_ebnf.Comment
-.. autoclass:: parse_ebnf.Space
-.. autoclass:: parse_ebnf.Product
-.. autoclass:: parse_ebnf.Identifier
-.. autoclass:: parse_ebnf.Literal
-.. autoclass:: parse_ebnf.DefinitionList
-.. autoclass:: parse_ebnf.Definition
-.. autoclass:: parse_ebnf.Term
-.. autoclass:: parse_ebnf.Repetition
-.. autoclass:: parse_ebnf.Terminal
-.. autoclass:: parse_ebnf.Repeat
-.. autoclass:: parse_ebnf.Option
-.. autoclass:: parse_ebnf.Special
-.. autoclass:: parse_ebnf.Group
-.. autoclass:: parse_ebnf.Empty
-.. autoclass:: parse_ebnf.Exception
-.. autoclass:: parse_ebnf.EmptyTerm
+.. autoclass:: parse_ebnf.nodes.Root
+.. autoclass:: parse_ebnf.nodes.Text
+.. autoclass:: parse_ebnf.nodes.Comment
+.. autoclass:: parse_ebnf.nodes.Space
+.. autoclass:: parse_ebnf.nodes.Product
+.. autoclass:: parse_ebnf.nodes.Identifier
+.. autoclass:: parse_ebnf.nodes.Literal
+.. autoclass:: parse_ebnf.nodes.DefinitionList
+.. autoclass:: parse_ebnf.nodes.Definition
+.. autoclass:: parse_ebnf.nodes.Term
+.. autoclass:: parse_ebnf.nodes.Repetition
+.. autoclass:: parse_ebnf.nodes.Terminal
+.. autoclass:: parse_ebnf.nodes.Repeat
+.. autoclass:: parse_ebnf.nodes.Option
+.. autoclass:: parse_ebnf.nodes.Special
+.. autoclass:: parse_ebnf.nodes.Group
+.. autoclass:: parse_ebnf.nodes.Empty
+.. autoclass:: parse_ebnf.nodes.Exception
+.. autoclass:: parse_ebnf.nodes.EmptyTerm
 

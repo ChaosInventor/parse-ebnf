@@ -25,26 +25,26 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 rst_prolog = """
 .. |AST| replace:: :py:class:`AST <parse_ebnf.AST>`
-.. |Node| replace:: :py:class:`Node <parse_ebnf.Node>`
-.. |Root| replace:: :py:class:`Root <parse_ebnf.Root>`
-.. |Text| replace:: :py:class:`Text <parse_ebnf.Text>`
-.. |Comment| replace:: :py:class:`Comment <parse_ebnf.Comment>`
-.. |Space| replace:: :py:class:`Space <parse_ebnf.Space>`
-.. |Identifier| replace:: :py:class:`Identifier <parse_ebnf.Identifier>`
-.. |Literal| replace:: :py:class:`Literal <parse_ebnf.Literal>`
-.. |Product| replace:: :py:class:`Product <parse_ebnf.Product>`
-.. |DefinitionList| replace:: :py:class:`DefinitionList <parse_ebnf.DefinitionList>`
-.. |Definition| replace:: :py:class:`Definition <parse_ebnf.Definition>`
-.. |Term| replace:: :py:class:`Term <parse_ebnf.Term>`
-.. |Exception| replace:: :py:class:`Exception <parse_ebnf.Exception>`
-.. |Repetition| replace:: :py:class:`Repetition <parse_ebnf.Repetition>`
-.. |Terminal| replace:: :py:class:`Terminal <parse_ebnf.Terminal>`
-.. |Repeat| replace:: :py:class:`Repeat <parse_ebnf.Repeat>`
-.. |Option| replace:: :py:class:`Option <parse_ebnf.Option>`
-.. |Group| replace:: :py:class:`Group <parse_ebnf.Group>`
-.. |Special| replace:: :py:class:`Special <parse_ebnf.Special>`
-.. |Empty| replace:: :py:class:`Empty <parse_ebnf.Empty>`
-.. |EmptyTerm| replace:: :py:class:`EmptyTerm <parse_ebnf.EmptyTerm>`
+.. |Node| replace:: :py:class:`Node <parse_ebnf.nodes.Node>`
+.. |Root| replace:: :py:class:`Root <parse_ebnf.nodes.Root>`
+.. |Text| replace:: :py:class:`Text <parse_ebnf.nodes.Text>`
+.. |Comment| replace:: :py:class:`Comment <parse_ebnf.nodes.Comment>`
+.. |Space| replace:: :py:class:`Space <parse_ebnf.nodes.Space>`
+.. |Identifier| replace:: :py:class:`Identifier <parse_ebnf.nodes.Identifier>`
+.. |Literal| replace:: :py:class:`Literal <parse_ebnf.nodes.Literal>`
+.. |Product| replace:: :py:class:`Product <parse_ebnf.nodes.Product>`
+.. |DefinitionList| replace:: :py:class:`DefinitionList <parse_ebnf.nodes.DefinitionList>`
+.. |Definition| replace:: :py:class:`Definition <parse_ebnf.nodes.Definition>`
+.. |Term| replace:: :py:class:`Term <parse_ebnf.nodes.Term>`
+.. |Exception| replace:: :py:class:`Exception <parse_ebnf.nodes.Exception>`
+.. |Repetition| replace:: :py:class:`Repetition <parse_ebnf.nodes.Repetition>`
+.. |Terminal| replace:: :py:class:`Terminal <parse_ebnf.nodes.Terminal>`
+.. |Repeat| replace:: :py:class:`Repeat <parse_ebnf.nodes.Repeat>`
+.. |Option| replace:: :py:class:`Option <parse_ebnf.nodes.Option>`
+.. |Group| replace:: :py:class:`Group <parse_ebnf.nodes.Group>`
+.. |Special| replace:: :py:class:`Special <parse_ebnf.nodes.Special>`
+.. |Empty| replace:: :py:class:`Empty <parse_ebnf.nodes.Empty>`
+.. |EmptyTerm| replace:: :py:class:`EmptyTerm <parse_ebnf.nodes.EmptyTerm>`
 
 .. |or| replace:: :ref:`| <groups>`
 .. |maybe| replace:: :ref:`? <optional>`

@@ -12,5 +12,5 @@ Use |AST| to parse your input, and |Node| and it's
 .. autoclass:: parse_ebnf.AST
    :members: parse, unparse, write
 
-.. autoclass:: parse_ebnf.Node
+.. autoclass:: parse_ebnf.nodes.Node
 
