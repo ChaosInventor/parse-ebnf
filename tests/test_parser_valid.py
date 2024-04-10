@@ -4,7 +4,7 @@
 
 import pytest
 import glob
-from parse_ebnf import PT
+from parse_ebnf import PT, parsing, EBNFError
 from parse_ebnf.nodes import Root
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
@@ -14,9 +14,10 @@ def test_parser(tmp_path, ebnf_path):
 
     pt = PT()
     try:
-        pt.parse(ebnf.read)
-    finally:
-        print(str(pt))
+        pt = parsing.parsePT(ebnf.read)
+    except EBNFError as e:
+        print(str(e.parser.pt))
+        raise e
 
     tmpFile = open(tmp_path / 'tmp', 'w+')
     pt.unparse(tmpFile.write)
@@ -34,9 +35,10 @@ def test_pt(ebnf_path):
 
     pt = PT()
     try:
-        pt.parse(ebnf.read)
-    finally:
-        print(str(pt))
+        pt = parsing.parsePT(ebnf.read)
+    except EBNFError as e:
+        print(str(e.parser.pt))
+        raise e
 
     assert isinstance(pt.root, Root)
 
@@ -67,7 +69,7 @@ def test_pt_coordinates(ebnf_path):
 
     pt = PT()
     try:
-        pt.parse(ebnf.read)
+        pt = parsing.parsePT(ebnf.read)
     except:
         print(str(pt))
 

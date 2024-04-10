@@ -57,6 +57,8 @@ class Node:
         pt.height = node.depth if node.depth > pt.height else pt.height
         pt.maxDegree = len(self.children) if len(self.children) > pt.maxDegree else pt.maxDegree
 
+        if len(self.children) > 1000:
+            breakpoint()
         return node
     def write(self, write, depth=0):
         write(str(self))
@@ -110,24 +112,6 @@ class Root(Node):
     (|Product| |or| |Comment| |or| |Space|)\ |any|
 
     """
-    def parse(self, parser):
-        self.startLine = 1
-        self.startColumn = 1
-
-        while len(parser.c) > 0:
-            if parser.c == '(':
-                self._parseNode(parser, Comment())
-                parser.read(1)
-            elif parser.c.isalpha():
-                self._parseNode(parser, Product())
-            elif parser.c.isspace():
-                self._parseNode(parser, Space())
-            else:
-                raise SyntaxError(f"Unexpected character, {parser.c}, at file level at {parser.line},{parser.column}")
-
-        self.endLine = parser.line
-        self.endColumn = parser.column
-        return self
 
     def __str__(self):
         return f"Root:{super().__str__()}"
@@ -156,27 +140,14 @@ class Text(Node):
     """
     data = ''
 
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        while parser.c != self.start:
-            self.data += parser.c
-            parser.readNoEOF(1, f"EOF before termination of text started at {self.startLine},{self.startColumn}")
-
-        self.endLine = parser.line
-        self.endColumn = parser.column - 1
-        return self
-
     def __init__(self, start=None, data=''):
         super().__init__()
         self.data = data
-        self.start = start
     def __repr__(self):
         return self.data
     def __str__(self):
         return f"Text({self.data}):{super().__str__()}"
-class Comment(Text):
+class Comment(Node):
     """Nodes holding EBNF comments.
 
     Comments in EBNF are enclosed by ``(*``, ``*)`` pairs. Nesting is allowed.
@@ -194,50 +165,9 @@ class Comment(Text):
     ``[]``, leaf node, see |Text|.
 
     """
-    def parse(self, parser):
-        assert parser.c == '(', f"Expected current character to be '(', not {parser.c}."
 
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        parser.read(1)
-        if parser.c != '*':
-            raise SyntaxError(f"Expected '*' at {parser.line},{parser.column} since previous was a '('")
-
-        parser.read(1)
-        #Keeps track of comment recursion
-        depth = 0
-        #Loop is broken when '*)' is encountered and depth is 0
-        while True:
-            if parser.c == '*':
-                oc = parser.c
-                parser.read(1)
-
-                if parser.c == ')':
-                    if depth <= 0:
-                        break;
-                    else:
-                        depth -= 1
-
-                self.data += oc
-            elif parser.c == '(':
-                self.data += parser.c
-                parser.read(1)
-                if parser.c == '*':
-                    depth += 1
-
-            self.data += parser.c
-            parser.readNoEOF(1, "Commend not terminated before EOF")
-
-        self.endLine = parser.line
-        self.endColumn = parser.column
-
-        return self
-
-    def __repr__(self):
-        return f"(*{self.data}*)"
     def __str__(self):
-        return f"Comment({self.data}):{Node.__str__(self)}"
+        return f"Comment:{super().__str__()}"
 class Space(Text):
     """Node holding whitespace.
 
@@ -249,97 +179,10 @@ class Space(Text):
 
     ``None``, it is a leaf node, see |Text|.
     """
-    def parse(self, parser):
-        assert parser.c.isspace(), f"Expected the current character to be a space, not {parser.c}"
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        self.data += parser.c
-        self.endLine = parser.line
-        self.endColumn = parser.column
-        while parser.read(1).isspace():
-            self.data += parser.c
-            self.endLine = parser.line
-            self.endColumn = parser.column
-
-        return self
-
     def __init__(self, data=''):
         super().__init__(None, data)
     def  __str__(self):
         return f"Space:{Node.__str__(self)}"
-class Identifier(Text):
-    """Node holding an identifier.
-
-    Identifiers are alphanumeric string that do not start with a number. They
-    do not contain trailing or leading whitespace, however they may contain
-    whitespace in the middle.
-
-    .. rubric:: :ref:`Parent type <parentEntry>`
-
-    |Product| |or| |Term| |or| |Exception|.
-
-    .. rubric:: :ref:`Children <childrenEntry>`
-
-    ``None``, it is a leaf node, see |Text|.
-    """
-    def parse(self, parser):
-        assert parser.c.isalpha(), f"Expected current character to be alphabetic, got {parser.c} instead."
-
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        self.data += parser.c
-        self.endLine = parser.line
-        self.endColumn = parser.column
-        parser.read(1)
-        while parser.c.isalpha() or parser.c.isnumeric() or parser.c.isspace():
-            self.data += parser.c
-            self.endLine = parser.line
-            self.endColumn = parser.column
-            parser.read(1)
-
-        return self
-    def trim(self, parser):
-        ret = ''
-        while len(self.data) > 0:
-            if self.data[-1].isspace():
-                ret += self.data[-1]
-                self.data = self.data[:-1]
-                if ret[-1] == '\n':
-                    self.endLine -= 1
-            else:
-                if (line := self.data.rfind('\n')) != -1:
-                    self.endColumn =  len(self.data[line + 1:])
-                else:
-                    self.endColumn = self.startColumn + len(self.data) - 1
-                break
-
-        if len(ret) > 0:
-            space = Space(ret[::-1])
-
-            space.startLine = self.endLine
-            space.startColumn = self.endColumn + 1
-
-            space.endLine = space.startLine
-            space.endColumn = 0
-            onLptLine = True
-            for c in ret:
-                if c == '\n':
-                    space.endLine += 1
-                    onLptLine = False
-                elif onLptLine:
-                    space.endColumn += 1
-
-            if space.startLine == space.endLine:
-                space.endColumn = space.startColumn + len(ret) - 1
-
-            return space
-        else:
-            return None
-
-    def  __str__(self):
-        return f"Identifier({self.data}):{Node.__str__(self)}"
 class Literal(Text):
     """Node holding one or more characters.
 
@@ -357,52 +200,9 @@ class Literal(Text):
 
     ``None``, it is a leaf node, see |Text|.
     """
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
 
-        #Copy literals with index info
-        literals = []
-        i = 0
-        for lit in self.literals:
-            literals.append((lit, i))
-            i += 1
-        match = None
-        self.endLine = parser.line
-        self.endColumn = parser.column
-        while True:
-            lits = literals[::]
-            for literal in lits:
-                if parser.c != literal[0][0]:
-                    literals.remove(literal)
-            if len(literals) == 0:
-                if match != None:
-                    self.data = match
-                    return self
-                else:
-                    break
-            lits = literals[::]
-            for literal in lits:
-                index = literals.index(literal)
-                literals[index] = (literal[0][1:], literal[1])
-                if len(literals[index][0]) == 0:
-                    literals.pop(index)
-                    match = self.literals[literal[1]]
-
-            self.endLine = parser.line
-            self.endColumn = parser.column
-            parser.read(1)
-
-        if match != None:
-            self.data = match
-            return self
-
-        raise SyntaxError(f"Could not match any literals {self.literals} starting at {self.startLine},{self.startColumn}")
-
-    def __init__(self, literals, data=''):
-        assert len(literals) > 0, "Literal cannot be empty"
+    def __init__(self, data=''):
         super().__init__(data)
-        self.literals = literals
     def __str__(self):
         return f"Literal({self.data}):{Node.__str__(self)}"
 
@@ -434,30 +234,6 @@ class Product(Node):
     lhs = None
     rhs = None
 
-    def parse(self, parser):
-        assert parser.c.isalpha(), f"Expected current character to be alphabetic, got {parser.c} instead."
-
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        ident = self._parseNode(parser, Identifier())
-
-        if (space := ident.trim(parser)) != None:
-            self.addChild(space, parser.pt)
-
-        self._parseNode(parser, Literal(['=']))
-
-        if parser.c.isspace():
-            self._parseNode(parser, Space())
-
-        self._parseNode(parser, DefinitionList())
-
-        self.endLine = parser.line
-        self.endColumn = parser.column
-        self._parseNode(parser, Literal(parser.PRODUCT_TERMINATOR_SYMBOLS))
-
-        return self
-
     def __init__(self, lhs=None, rhs=None, pt=None):
         super().__init__()
         if lhs != None or rhs != None:
@@ -488,36 +264,6 @@ class DefinitionList(Node):
     |Space|\ |maybe|, (|Definition|, |Space|\ |maybe|,
     |Literal| = '|' | '/' | '!')\ |any|, |Space|\ |maybe|.
     """
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        while True:
-            if parser.c.isspace():
-                self._parseNode(parser, Space())
-
-            definition = self._parseNode(parser, Definition())
-
-            if parser.c.isspace():
-                self._parseNode(parser, Space())
-
-            self.endLine = parser.line
-            self.endColumn = parser.column - 1
-            if parser.c in parser.DEFINITION_SEPARATORS:
-                lit = Literal(parser.DEFINITION_SEPARATORS + ['/)']).parse(parser)
-
-                #Special case for alternate '}'
-                if lit.data == '/)':
-                    self.endLine = parser.line
-                    self.endColumn = parser.column - 3
-                    return self, lit
-                else:
-                    self.addChild(lit, parser.pt)
-            else:
-                break
-
-        return self, None
-
     def __str__(self):
         return f"Definition list:{super().__str__()}"
 
@@ -537,33 +283,6 @@ class Definition(Node):
     |Literal| = ',', |Space|\ |maybe|)\ |any|.
 
     """
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        term = None
-        while True:
-            if len(parser.c) == 0:
-                raise SyntaxError(f"Unexpected EOF in definition started at {self.startLine},{self.startColumn}")
-            if parser.c.isspace():
-                self._parseNode(parser, Space())
-            elif parser.c.isalpha() or parser.c.isnumeric() or parser.c in parser.TERM_START_SYMBOLS:
-                if term != None:
-                    raise SyntaxError(f"Start of another term at {parser.line},{parser.column} before previous term at {term.startLine},{term.startColumn} properly terminated")
-                term = self._parseNode(parser, Term())
-            elif parser.c == ',':
-                if term == None:
-                    self._parseNode(parser, EmptyTerm())
-                self._parseNode(parser, Literal([',']))
-                term = None
-            else:
-                #Let the definition list handle it
-                break;
-
-        self.endLine = parser.line
-        self.endColumn = parser.column - 1
-        return self
-
     def __str__(self):
         return f"Definition:{super().__str__()}"
 
@@ -609,66 +328,6 @@ class Term(Node):
     primary = None
     exception = None
 
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        while True:
-            if parser.c.isspace():
-                self._parseNode(parser, Space())
-            elif parser.c.isalpha():
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, Identifier())
-                if (space := self.primary.trim(parser)) != None:
-                    self.addChild(space, parser.pt)
-            elif parser.c.isnumeric():
-                if self.repetition != None:
-                    raise SyntaxError(f"Term can only have one repetition, another defined at {parser.line},{parser.column}, lpt one at {self.repetition.startLine},{self.repetition.startColumn}")
-                self.repetition = self._parseNode(parser, Repetition())
-            elif parser.c == '-':
-                if self.exception != None:
-                    raise SyntaxError(f"Unexpected '-', term started at {self.startLine},{self.startColumn} already has an exception defined at {self.exception.startLine},{self.exception.startColumn}")
-                self._parseNode(parser, Literal(['-']))
-                self.exception = self._parseNode(parser, Exception())
-            elif parser.c in parser.TERMINAL_START_SYMBOLS:
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-
-                self.primary = self._parseNode(parser, Terminal())
-            elif parser.c == '{':
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, Repeat())
-            elif parser.c == '[':
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, Option())
-            elif parser.c == '?':
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, Special())
-            elif parser.c == '(':
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                lit = Literal(parser.BRACKET_START_SYMBOLS).parse(parser)
-                if lit.data == '(':
-                    self.primary = self._parseNode(parser, Group(lit))
-                if lit.data == '(/':
-                    self.primary = self._parseNode(parser, Repeat(lit))
-                if lit.data == '(:':
-                    self.primary = self._parseNode(parser, Option(lit))
-            else:
-                #Let the definition handle it
-                break
-
-        if self.primary == None:
-            self.primary = self._parseNode(parser, Empty())
-
-        self.endLine = self.children[-1].endLine
-        self.endColumn = self.children[-1].endColumn
-        return self
-
     def __init__(self, pt=None, repetition=None, primary=None, exception=None):
         assert repetition == None or isinstance(repetition, Repetition), f"Repetition must be either None or an int, got {repetition}"
         assert isinstance(primary, Node) or primary == None, "A term must have a primary"
@@ -709,57 +368,6 @@ class Exception(Node):
     """
     primary = None
 
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        while True:
-            if parser.c.isspace():
-                self._parseNode(parser, Space())
-            elif parser.c.isalpha():
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, Identifier())
-                if (space := self.primary.trim(parser)) != None:
-                    self.addChild(space, parser.pt)
-            elif parser.c in parser.TERMINAL_START_SYMBOLS:
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-
-                self.primary = self._parseNode(parser, Terminal())
-            elif parser.c == '{':
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, Repeat())
-            elif parser.c == '[':
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, Option())
-            elif parser.c == '?':
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                self.primary = self._parseNode(parser, Special())
-            elif parser.c == '(':
-                if self.primary != None:
-                    raise SyntaxError(f"Term started at {self.startLine},{self.startColumn} can only have one primary, however another defined at {parser.line},{parser.column}")
-                lit = Literal(parser.BRACKET_START_SYMBOLS).parse(parser)
-                if lit.data == '(':
-                    self.primary = self._parseNode(parser, Group(lit))
-                if lit.data == '(/':
-                    self.primary = self._parseNode(parser, Repeat(lit))
-                if lit.data == '(:':
-                    self.primary = self._parseNode(parser, Option(lit))
-            else:
-                #Let the definition handle it
-                break
-
-        if self.primary == None:
-            self.primary = self._parseNode(parser, Empty())
-
-        self.endLine = self.children[-1].endLine
-        self.endColumn = self.children[-1].endColumn
-        return self
-
     def __init__(self, pt=None, primary=None):
         assert isinstance(primary, Node) or primary == None, "A term must have a primary"
         if primary != None:
@@ -791,26 +399,6 @@ class Repetition(Node):
     """
     count = 0
 
-    def parse(self, parser):
-        assert parser.c.isnumeric(), f"Expected the current character to be a number, not {parser.c}"
-
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        num = parser.c
-        while parser.readNoEOF(1, "EOF before proper termination of integer").isnumeric():
-            num += parser.c
-        self.count = int(num)
-
-        if parser.c.isspace():
-            self._parseNode(parser, Space())
-
-        self.endLine = parser.line
-        self.endColumn = parser.column
-        self._parseNode(parser, Literal(['*']))
-
-        return self
-
     def __init__(self, count=0):
         super().__init__()
         self.count = count
@@ -819,7 +407,13 @@ class Repetition(Node):
     def __repr__(self):
         return str(self.count) + super().__repr__()
 
-class Terminal(Node):
+class Primary(Node):
+    """ A node holding what a term parses
+    TODO:
+    """
+    pass
+
+class Terminal(Primary):
     """A node holding a terminal.
 
     Terminals are sequences of characters that are enclosed by either:
@@ -837,26 +431,66 @@ class Terminal(Node):
     |Literal| = '"' | "'" | '`', |Text|, |Literal| = '"' |
     "'" | '`'.
     """
-    def parse(self, parser):
-        assert parser.c in parser.TERMINAL_START_SYMBOLS, f"Expected current character to be one of {parser.TERMINAL_START_SYMBOLS}, not {parser.c}"
-
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        lit = self._parseNode(parser, Literal([parser.c]))
-        self._parseNode(parser, Text(lit.data))
-
-        self.endLine = parser.line
-        self.endColumn = parser.column
-
-        self._parseNode(parser, Literal([lit.data]))
-
-        return self
-
     def __str__(self):
         return f"Terminal:{super().__str__()}"
 
-class Repeat(Node):
+class Identifier(Text, Primary):
+    """Node holding an identifier.
+
+    Identifiers are alphanumeric string that do not start with a number. They
+    do not contain trailing or leading whitespace, however they may contain
+    whitespace in the middle.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Product| |or| |Term| |or| |Exception|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |Text|.
+    """
+    def trim(self, parser):
+        ret = ''
+        while len(self.data) > 0:
+            if self.data[-1].isspace():
+                ret += self.data[-1]
+                self.data = self.data[:-1]
+                if ret[-1] == '\n':
+                    self.endLine -= 1
+            else:
+                if (line := self.data.rfind('\n')) != -1:
+                    self.endColumn =  len(self.data[line + 1:])
+                else:
+                    self.endColumn = self.startColumn + len(self.data) - 1
+                break
+
+        if len(ret) > 0:
+            space = Space(ret[::-1])
+
+            space.startLine = self.endLine
+            space.startColumn = self.endColumn + 1
+
+            space.endLine = space.startLine
+            space.endColumn = 0
+            onLptLine = True
+            for c in ret:
+                if c == '\n':
+                    space.endLine += 1
+                    onLptLine = False
+                elif onLptLine:
+                    space.endColumn += 1
+
+            if space.startLine == space.endLine:
+                space.endColumn = space.startColumn + len(ret) - 1
+
+            return space
+        else:
+            return None
+
+    def  __str__(self):
+        return f"Identifier({self.data}):{Node.__str__(self)}"
+
+class Repeat(Primary):
     """ A node holding a repeatable group.
 
     A group enclosed by either:
@@ -882,34 +516,6 @@ class Repeat(Node):
     """
     lit = None
 
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        if self.lit == None:
-            self._parseNode(parser, Literal(['{']))
-        else:
-            self.addChild(self.lit, parser.pt)
-            self.startLine = self.lit.startLine
-            self.startColumn = self.lit.startColumn
-
-        if parser.c.isspace():
-            self._parseNode(parser, Space())
-
-        defList, lit = self._parseNode(parser, DefinitionList())
-
-        if lit != None:
-            self.endLine = lit.endLine
-            self.endColumn = lit.endColumn
-            self.addChild(lit, parser.pt)
-        else:
-            self.endLine = parser.line
-            self.endColumn = parser.column
-            #No need to check for '/)' since the definition list would have parsed it if it were there
-            self._parseNode(parser, Literal(['}']))
-
-        return self
-
     def __init__(self, lit=None):
         assert isinstance(lit, Literal) or lit == None
         super().__init__()
@@ -917,8 +523,7 @@ class Repeat(Node):
 
     def __str__(self):
         return f"Repeat:{super().__str__()}"
-
-class Option(Node):
+class Option(Primary):
     """ A node holding an optional group.
 
     A group enclosed by either:
@@ -944,32 +549,6 @@ class Option(Node):
     """
     lit = None
 
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        if self.lit == None:
-            self._parseNode(parser, Literal(['[']))
-        else:
-            self.addChild(self.lit, parser.pt)
-            self.startLine = self.lit.startLine
-            self.startColumn = self.lit.startColumn
-
-        if parser.c.isspace():
-            self._parseNode(parser, Space())
-
-        defList = self._parseNode(parser, DefinitionList())
-
-        self.endLine = parser.line
-        self.endColumn = parser.column
-
-        lit =self._parseNode(parser, Literal([']', ':)']))
-
-        if lit.data == ':)':
-            self.endColumn += 1
-
-        return self
-
     def __init__(self, lit=None):
         assert isinstance(lit, Literal) or lit == None
         super().__init__()
@@ -977,8 +556,7 @@ class Option(Node):
 
     def __str__(self):
         return f"Option:{super().__str__()}"
-
-class Group(Node):
+class Group(Primary):
     """ A node holding a group.
 
     A group enclosed by ``(`` and ``)`` can be used to make what are essentially
@@ -999,29 +577,6 @@ class Group(Node):
     """
     lit = None
 
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        if self.lit == None:
-            self._parseNode(parser, Literal(['(']))
-        else:
-            self.addChild(self.lit, parser.pt)
-            self.startLine = self.lit.startLine
-            self.startColumn = self.lit.startColumn
-
-        if parser.c.isspace():
-            self._parseNode(parser, Space())
-
-        defList = self._parseNode(parser, DefinitionList())
-
-        self.endLine = parser.line
-        self.endColumn = parser.column
-
-        self._parseNode(parser, Literal([')']))
-
-        return self
-
     def __init__(self, lit=None):
         assert isinstance(lit, Literal) or lit == None
         super().__init__()
@@ -1029,8 +584,7 @@ class Group(Node):
 
     def __str__(self):
         return f"Group:{super().__str__()}"
-
-class Special(Node):
+class Special(Primary):
     """ A node holding a special sequence.
 
     A sequence of text enclosed by ``?`` is considered a special sequence. The
@@ -1044,38 +598,10 @@ class Special(Node):
 
     |Literal| = '?', |Text|, |Literal| = '?'.
     """
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-
-        self._parseNode(parser, Literal(['?']))
-        self._parseNode(parser, Text('?'))
-
-        self.endLine = parser.line
-        self.endColumn = parser.column
-
-        self._parseNode(parser, Literal(['?']))
-
-        return self
     def __str__(self):
         return f"Special:{super().__str__()}"
-
-class Empty(Node):
+class EmptyString(Primary):
     """A node that holds nothing."""
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-        self.endLine = parser.line
-        self.endColumn = parser.column - 1
-        return self
 
-class EmptyTerm(Term):
-    """A node that is used to represent an empty string as a term."""
-    def parse(self, parser):
-        self.startLine = parser.line
-        self.startColumn = parser.column
-        self.endLine = parser.line
-        self.endColumn = parser.column - 1
-        self._parseNode(parser, Empty())
-        return self
-
+    def __str__(self):
+        return f"EmptyString:{super().__str__()}"

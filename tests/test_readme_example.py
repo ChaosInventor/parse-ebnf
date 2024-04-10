@@ -8,8 +8,7 @@ import glob
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
 
 def test_example(ebnf_path):
-
-    from parse_ebnf import PT
+    from parse_ebnf import PT, parsing
 
     #Your EBNF file goes here
     ebnf = open(ebnf_path, 'r')
@@ -18,7 +17,7 @@ def test_example(ebnf_path):
 
     try:
         #Will raise SyntaxError on error with an error message describing what went wrong
-        pt.parse(ebnf.read) #You need to pass in a function that returns n characters where n is given as the first parameter.
+        pt = parsing.parsePT(ebnf.read)
     finally:
         #Even after an error a partial tree will be generated.
         #str gives a text version of the parse tree(meant for debugging), while repr gives the text that it was produced from.
@@ -39,5 +38,5 @@ def test_example(ebnf_path):
     #Finds each comment in the file and prints its text content
     for child in pt.root.children:
         if isinstance(child, Comment):
-            print(child.data)
+            print(repr(child))
 

@@ -4,77 +4,6 @@
 
 from parse_ebnf import nodes
 
-class ParserState:
-    """A helper class for parsing, not meant to be used externally.
-
-    Keeps track of the current line and column, `line` and `column`
-    respectively, as well as the currently read string, `c`. It also has a
-    reference to the PT it belongs, `pt`, and to the read function `readFunc`
-
-    Has lists containing constant characters that are used as terminals those
-    being:
-
-     - `DEFINITION_SEPARATORS`
-     - `PRODUCT_TERMINATOR_SYMBOLS`
-     - `TERMINAL_START_SYMBOLS`
-     - `TERM_START_SYMBOLS`
-     - `BRACKET_START_SYMBOLS`
-     - `BRACKET_END_SYMBOLS`
-
-    Finally has two helper functions for reading input:
-
-     - `read`
-     - `readNoEOF`
-
-    They help by maintaining `line`, `column` and `c`.
-    """
-    pt = None
-    readFunc = None
-    c = ''
-    line = 0
-    column = 0
-
-    DEFINITION_SEPARATORS = ['|', '/', '!']
-    PRODUCT_TERMINATOR_SYMBOLS = [';', '.']
-    TERMINAL_START_SYMBOLS = ['"', "'", "`"]
-    TERM_START_SYMBOLS = ['(', '[', '{', '?'] + TERMINAL_START_SYMBOLS
-    BRACKET_START_SYMBOLS = ['(', '(/', '(:']
-    BRACKET_END_SYMBOLS = [')', '/)', ':)']
-
-    def read(self, n):
-        """Reads `n` characters, updates `line`, `column` and `c`, returns self.c"""
-        self.c = self.readFunc(n)
-        for c in self.c:
-            if c == '\n':
-                self.line += 1
-                self.column = 0
-            else:
-                self.column += 1
-
-        return self.c
-    def readNoEOF(self, n, msg="Unexpected EOF"):
-        """Just like `read` except that it raises a `SyntaxError` with `msg` if
-        no characters were read, that is EOF has been reached.
-        """
-        self.read(n)
-
-        if len(self.c) == 0:
-            raise SyntaxError(msg)
-
-        return self.c
-
-    def __init__(self, read, pt):
-        """ Create a new parser state for the PT `pt` with the read function
-        `read`.
-        """
-        assert isinstance(pt, PT), "Expected an PT obejct"
-        assert read != None, "Expected a read function"
-        self.pt = pt
-        self.readFunc = read
-        self.line = 1
-        self. column = 0
-        self.read(1)
-
 class PT:
     """A parse tree for EBNF.
 
@@ -100,7 +29,7 @@ class PT:
 
     .. code-block:: python
 
-        from parse_ebnf import PT
+        from parse_ebnf import PT, parsing
         from io import StringIO
 
         pt1 = PT()
@@ -108,9 +37,9 @@ class PT:
 
         file = open('your-ebnf-file.ebnf', 'r')
 
-        pt1.parse(file.read);
+        pt1 = parsing.parsePT(file.read)
         with StringIO('rule = term | another term;') as f:
-            pt2.parse(f.read)
+            pt2 = parsing.parsePT(f.read)
 
         #You now have two useable parse trees, pt1 and pt2
 
@@ -131,14 +60,6 @@ class PT:
     height = 0
     maxDegree = 0
 
-    def parse(self, read):
-        """Parse an input from ``read``.
-
-        ``read`` is a function that works exactly like read for files - it takes
-        in a positive number or zero, and returns a string of that size or less
-        if EOF is near.
-        """
-        self.root.parse(ParserState(read, self))
     def unparse(self, write):
         """Write the text this tree was generate to using ``write``.
 
@@ -154,8 +75,8 @@ class PT:
         write(str(self))
 
     def __init__(self):
-        self.root = nodes.Root()
-        self.count = 1
+        self.root = None
+        self.count = 0
         self.height = 0
         self.maxDegree = 0
     def __repr__(self):
@@ -165,3 +86,9 @@ class PT:
         """Returns a textual representation of this tree meant for debugging."""
         return f'PT{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{str(self.root)}'
 
+class EBNFError(Exception):
+    pass
+
+#def parse(ebfn: str):
+#    source = open(ebnf)
+#    return parsing.parsePT(source.read)

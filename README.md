@@ -27,7 +27,7 @@ pip install parse-ebnf
 ## Quick start
 
 ```python
-from parse_ebnf import PT
+from parse_ebnf import PT, parsing
 
 #Your EBNF file goes here
 ebnf = open('grammar.ebnf', 'r')
@@ -36,7 +36,7 @@ pt = PT()
 
 try:
     #Will raise SyntaxError on error with an error message describing what went wrong
-    pt.parse(ebnf.read) #You need to pass in a function that returns n characters where n is given as the first parameter.
+    pt = parsing.parsePT(ebnf.read) #You need to pass in a function that returns n characters where n is given as the first parameter.
 finally:
     #Even after an error a partial tree will be generated.
     #str gives a text version of the parse tree(meant for debugging), while repr gives the text that it was produced from.
@@ -57,7 +57,7 @@ from parse_ebnf.nodes import Comment
 #Finds each comment in the file and prints its text content
 for child in pt.root.children:
     if isinstance(child, Comment):
-        print(child.data)
+        print(repr(child))
 ```
 
 ## Documentation
