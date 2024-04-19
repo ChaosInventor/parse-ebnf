@@ -9,7 +9,8 @@ from parse_ebnf.nodes import Root
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
 
-def test_parser(tmp_path, ebnf_path):
+@pytest.fixture
+def ebnf(ebnf_path):
     ebnf = open(ebnf_path, 'r')
 
     pt = PT()
@@ -19,16 +20,22 @@ def test_parser(tmp_path, ebnf_path):
         print(str(e.parser.pt))
         raise e
 
+    yield pt, ebnf, ebnf_path
+
+    ebnf.close()
+
+def test_parser(tmp_path, ebnf):
+    pt, file, path = ebnf
+
     tmpFile = open(tmp_path/'tmp', 'w+')
     pt.unparse(tmpFile.write)
 
-    ebnf.seek(0)
+    file.seek(0)
     tmpFile.seek(0)
 
-    assert ebnf.read() == tmpFile.read()
+    assert file.read() == tmpFile.read()
 
     tmpFile.close()
-    ebnf.close()
 
 def count_node(node, depth=0):
     count = 1
@@ -42,27 +49,16 @@ def count_node(node, depth=0):
         maxDegree = d if d > maxDegree else maxDegree
 
     return count, height, maxDegree
-def count_pt_nodes(pt):
-    return count_node(pt.root)
-def test_pt(ebnf_path):
-    ebnf = open(ebnf_path, 'r')
-
-    pt = PT()
-    try:
-        pt = parsing.parsePT(ebnf.read)
-    except EBNFError as e:
-        print(str(e.parser.pt))
-        raise e
+def test_pt(ebnf):
+    pt, file, path = ebnf
 
     assert isinstance(pt.root, Root)
 
-    count, height, maxDegree = count_pt_nodes(pt)
+    count, height, maxDegree = count_node(pt.root)
 
     assert count == pt.count
     assert height == pt.height
     assert maxDegree == pt.maxDegree
-
-    ebnf.close()
 
 def check_node_coordinates(node, ebnf):
     print(str(node))
@@ -102,19 +98,8 @@ def check_node_coordinates(node, ebnf):
 
     for child in node:
         check_node_coordinates(child, ebnf)
-def check_pt_coordinates(pt, ebnf):
-    return check_node_coordinates(pt.root, ebnf)
-def test_pt_coordinates(ebnf_path):
-    ebnf = open(ebnf_path, 'r')
+def test_pt_coordinates(ebnf):
+    pt, file, path = ebnf
 
-    pt = PT()
-    try:
-        pt = parsing.parsePT(ebnf.read)
-    except EBNFError as e:
-        print(str(e.parser.pt))
-        raise e
-
-    check_pt_coordinates(pt, ebnf)
-
-    ebnf.close()
+    check_node_coordinates(pt.root, file)
 
