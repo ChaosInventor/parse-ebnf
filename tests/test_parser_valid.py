@@ -5,7 +5,7 @@
 import pytest
 import glob
 from parse_ebnf import PT, parsing, EBNFError
-from parse_ebnf.nodes import Root
+from parse_ebnf.nodes import Root, Node, Text
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
 
@@ -37,7 +37,31 @@ def test_parser(tmp_path, ebnf):
 
     tmpFile.close()
 
+def check_node_structure(node):
+    assert isinstance(node, Node)
+
+    assert all(child.parent == node for child in node)
+    # In case the iterator isn't implemented properly
+    assert all(child.parent == node for child in node.children)
+
+    for child in node:
+        check_node_structure(child)
+
+    if len(node.children) == 0:
+        assert isinstance(node, Text)
+
+    #TODO: Check structure of each different node type
+def test_pt_structure(ebnf):
+    pt, file, path = ebnf
+    print(str(pt))
+
+    assert isinstance(pt.root, Root)
+
+    check_node_structure(pt.root)
+
 def count_node(node, depth=0):
+    assert isinstance(node, Node)
+
     count = 1
     height = depth
     maxDegree = len(node.children)
@@ -52,8 +76,6 @@ def count_node(node, depth=0):
 def test_pt(ebnf):
     pt, file, path = ebnf
 
-    assert isinstance(pt.root, Root)
-
     count, height, maxDegree = count_node(pt.root)
 
     assert count == pt.count
@@ -61,6 +83,8 @@ def test_pt(ebnf):
     assert maxDegree == pt.maxDegree
 
 def check_node_coordinates(node, ebnf):
+    assert isinstance(node, Node)
+
     print(str(node))
 
     assert node.startLine >= 0
