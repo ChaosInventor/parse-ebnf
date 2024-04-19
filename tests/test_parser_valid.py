@@ -19,7 +19,7 @@ def test_parser(tmp_path, ebnf_path):
         print(str(e.parser.pt))
         raise e
 
-    tmpFile = open(tmp_path / 'tmp', 'w+')
+    tmpFile = open(tmp_path/'tmp', 'w+')
     pt.unparse(tmpFile.write)
 
     ebnf.seek(0)
@@ -30,6 +30,20 @@ def test_parser(tmp_path, ebnf_path):
     tmpFile.close()
     ebnf.close()
 
+def count_node(node, depth=0):
+    count = 1
+    height = depth
+    maxDegree = len(node.children)
+
+    for child in node:
+        c, h, d = count_node(child, depth+1)
+        count += c
+        height = h if h > height else height
+        maxDegree = d if d > maxDegree else maxDegree
+
+    return count, height, maxDegree
+def count_pt_nodes(pt):
+    return count_node(pt.root)
 def test_pt(ebnf_path):
     ebnf = open(ebnf_path, 'r')
 
@@ -42,81 +56,65 @@ def test_pt(ebnf_path):
 
     assert isinstance(pt.root, Root)
 
-    class NodeCounter:
-        def __init__(self, root):
-            self.root = root
-            self.height = 0
-            self.degree = 0
-            self.count = 0
-            self.countNodes(self.root)
-        def countNodes(self, node, depth=0):
-            self.height = depth if depth > self.height else self.height
-            self.degree = len(node.children) if len(node.children) > self.degree else self.degree
-            self.count += 1
-            for child in node:
-                self.countNodes(child, depth+1)
+    count, height, maxDegree = count_pt_nodes(pt)
 
-    counter = NodeCounter(pt.root)
-
-    assert counter.height == pt.height
-    assert counter.degree == pt.maxDegree
-    assert counter.count == pt.count
+    assert count == pt.count
+    assert height == pt.height
+    assert maxDegree == pt.maxDegree
 
     ebnf.close()
 
+def check_node_coordinates(node, ebnf):
+    print(str(node))
+
+    assert node.startLine >= 0
+    assert node.endLine >= 0
+    assert node.startColumn >= 0
+    assert node.startLine <= node.endLine
+
+    if node.startLine == node.endLine:
+        if node.startColumn > node.endColumn:
+            assert repr(node) == ''
+            for child in node:
+                check_node_coordinates(child, ebnf)
+            return
+        else:
+            assert node.endColumn >= 0
+
+    ebnf.seek(0)
+    line = None
+    for i in range(node.startLine):
+        line = ebnf.readline()
+
+    text = ''
+    if node.startColumn == 0:
+        text += '\n'
+    if node.startLine == node.endLine:
+        text += line[node.startColumn - 1 if node.startColumn > 0 else 0 : node.endColumn]
+    else:
+        text += line[node.startColumn - 1:] if node.startColumn > 0 else line
+        for i in range(node.endLine - node.startLine):
+            line = ebnf.readline()
+            if node.startLine + i + 1 == node.endLine: text += line[:node.endColumn]
+            else: text += line
+
+    assert text == repr(node)
+
+    for child in node:
+        check_node_coordinates(child, ebnf)
+def check_pt_coordinates(pt, ebnf):
+    return check_node_coordinates(pt.root, ebnf)
 def test_pt_coordinates(ebnf_path):
     ebnf = open(ebnf_path, 'r')
 
     pt = PT()
     try:
         pt = parsing.parsePT(ebnf.read)
-    except:
-        print(str(pt))
+    except EBNFError as e:
+        print(str(e.parser.pt))
+        raise e
 
-    class CoordinateChecker:
-        def __init__(self, root, ebnf):
-            self.root = root
-            self.ebnf = ebnf
-            self.check(self.root)
-        def check(self, node):
-            print(str(node))
-            assert node.startLine >= 0
-            assert node.endLine >= 0
-            assert node.startColumn >= 0
-
-            assert node.startLine <= node.endLine
-            if node.startLine == node.endLine:
-                if node.startColumn > node.endColumn:
-                    assert repr(node) == ''
-                    for child in node:
-                        self.check(child)
-                    return
-                else: assert node.endColumn >= 0
-
-            self.ebnf.seek(0)
-
-            line = None
-            for i in range(node.startLine):
-                line = ebnf.readline()
-
-            text = ''
-            if node.startColumn == 0:
-                text += '\n'
-            if node.startLine == node.endLine:
-                text += line[node.startColumn - 1 if node.startColumn > 0 else 0:node.endColumn]
-            else:
-                text += line[node.startColumn - 1:] if node.startColumn > 0 else line
-                for i in range(node.endLine - node.startLine):
-                    line = ebnf.readline()
-                    if node.startLine + i + 1 == node.endLine: text += line[:node.endColumn]
-                    else: text += line
-
-            assert text == repr(node)
-
-            for child in node:
-                self.check(child)
-
-    checker = CoordinateChecker(pt.root, ebnf)
+    check_pt_coordinates(pt, ebnf)
 
     ebnf.close()
 
