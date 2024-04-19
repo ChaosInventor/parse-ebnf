@@ -453,6 +453,8 @@ def parseDefinition(parent: nodes.Node, parser: ParserState) -> nodes.Definition
             #Let the parent handle it
             break;
 
+    if term == None:
+        parseEmptyTerm(definition, parser)
     definition.endLine = parser.line
     definition.endColumn = parser.column - 1
     return definition

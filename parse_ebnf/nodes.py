@@ -433,63 +433,6 @@ class Terminal(Primary):
     """
     def __str__(self):
         return f"Terminal:{super().__str__()}"
-
-class Identifier(Text, Primary):
-    """Node holding an identifier.
-
-    Identifiers are alphanumeric string that do not start with a number. They
-    do not contain trailing or leading whitespace, however they may contain
-    whitespace in the middle.
-
-    .. rubric:: :ref:`Parent type <parentEntry>`
-
-    |Product| |or| |Term| |or| |Exception|.
-
-    .. rubric:: :ref:`Children <childrenEntry>`
-
-    ``None``, it is a leaf node, see |Text|.
-    """
-    def trim(self, parser):
-        ret = ''
-        while len(self.data) > 0:
-            if self.data[-1].isspace():
-                ret += self.data[-1]
-                self.data = self.data[:-1]
-                if ret[-1] == '\n':
-                    self.endLine -= 1
-            else:
-                if (line := self.data.rfind('\n')) != -1:
-                    self.endColumn =  len(self.data[line + 1:])
-                else:
-                    self.endColumn = self.startColumn + len(self.data) - 1
-                break
-
-        if len(ret) > 0:
-            space = Space(ret[::-1])
-
-            space.startLine = self.endLine
-            space.startColumn = self.endColumn + 1
-
-            space.endLine = space.startLine
-            space.endColumn = 0
-            onLptLine = True
-            for c in ret:
-                if c == '\n':
-                    space.endLine += 1
-                    onLptLine = False
-                elif onLptLine:
-                    space.endColumn += 1
-
-            if space.startLine == space.endLine:
-                space.endColumn = space.startColumn + len(ret) - 1
-
-            return space
-        else:
-            return None
-
-    def  __str__(self):
-        return f"Identifier({self.data}):{Node.__str__(self)}"
-
 class Repeat(Primary):
     """ A node holding a repeatable group.
 
@@ -600,7 +543,63 @@ class Special(Primary):
     """
     def __str__(self):
         return f"Special:{super().__str__()}"
-class EmptyString(Primary):
+
+class Identifier(Text, Primary):
+    """Node holding an identifier.
+
+    Identifiers are alphanumeric string that do not start with a number. They
+    do not contain trailing or leading whitespace, however they may contain
+    whitespace in the middle.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Product| |or| |Term| |or| |Exception|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |Text|.
+    """
+    def trim(self, parser):
+        ret = ''
+        while len(self.data) > 0:
+            if self.data[-1].isspace():
+                ret += self.data[-1]
+                self.data = self.data[:-1]
+                if ret[-1] == '\n':
+                    self.endLine -= 1
+            else:
+                if (line := self.data.rfind('\n')) != -1:
+                    self.endColumn =  len(self.data[line + 1:])
+                else:
+                    self.endColumn = self.startColumn + len(self.data) - 1
+                break
+
+        if len(ret) > 0:
+            space = Space(ret[::-1])
+
+            space.startLine = self.endLine
+            space.startColumn = self.endColumn + 1
+
+            space.endLine = space.startLine
+            space.endColumn = 0
+            onLptLine = True
+            for c in ret:
+                if c == '\n':
+                    space.endLine += 1
+                    onLptLine = False
+                elif onLptLine:
+                    space.endColumn += 1
+
+            if space.startLine == space.endLine:
+                space.endColumn = space.startColumn + len(ret) - 1
+
+            return space
+        else:
+            return None
+
+    def  __str__(self):
+        return f"Identifier({self.data}):{Node.__str__(self)}"
+class EmptyString(Text, Primary):
     """A node that holds nothing."""
 
     def __str__(self):
