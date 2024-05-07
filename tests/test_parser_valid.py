@@ -36,20 +36,24 @@ def test_parser(tmp_path, ebnf):
 
     tmpFile.close()
 
-def check_node_structure(node):
+def check_node_structure(node, depth=0):
     assert isinstance(node, Node)
-
-    assert all(child.parent == node for child in node)
-    # In case the iterator isn't implemented properly
-    assert all(child.parent == node for child in node.children)
+    assert node.depth == depth
 
     for child in node:
-        check_node_structure(child)
+        assert child.parent == node
+
+    # In case the iterator for nodes isn't implemented properly
+    for child in node:
+        assert child.parent == node
 
     if len(node.children) == 0:
         assert isinstance(node, Text)
 
     #TODO: Check structure of each different node type
+
+    for child in node:
+        check_node_structure(child, depth+1)
 def test_pt_structure(ebnf):
     pt, file, path = ebnf
 
