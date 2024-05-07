@@ -67,7 +67,7 @@ class PT:
         takes in a string and write it to the output. Note that the return value
         in this case is ignored.
         """
-        write(repr(self.root))
+        write(str(self.root))
     def write(self, write):
         """Same as `unparse` except that a textual representation meant for
         debugging is written.
@@ -79,12 +79,12 @@ class PT:
         self.count = 0
         self.height = 0
         self.maxDegree = 0
-    def __repr__(self):
-        """Returns the text that this tree was generated from."""
-        return repr(self.root)
     def __str__(self):
+        """Returns the text that this tree was generated from."""
+        return str(self.root)
+    def __repr__(self):
         """Returns a textual representation of this tree meant for debugging."""
-        return f'PT{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{str(self.root)}'
+        return f'PT{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{repr(self.root)}'
 
 class EBNFError(Exception):
     pass

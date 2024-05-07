@@ -17,7 +17,6 @@ def ebnf(ebnf_path):
     try:
         pt = parsing.parsePT(ebnf.read)
     except EBNFError as e:
-        print(str(e.parser.pt))
         raise e
 
     yield pt, ebnf, ebnf_path
@@ -53,7 +52,6 @@ def check_node_structure(node):
     #TODO: Check structure of each different node type
 def test_pt_structure(ebnf):
     pt, file, path = ebnf
-    print(str(pt))
 
     assert isinstance(pt.root, Root)
 
@@ -85,8 +83,6 @@ def test_pt(ebnf):
 def check_node_coordinates(node, ebnf):
     assert isinstance(node, Node)
 
-    print(str(node))
-
     assert node.startLine >= 0
     assert node.endLine >= 0
     assert node.startColumn >= 0
@@ -94,7 +90,7 @@ def check_node_coordinates(node, ebnf):
 
     if node.startLine == node.endLine:
         if node.startColumn > node.endColumn:
-            assert repr(node) == ''
+            assert str(node) == ''
             for child in node:
                 check_node_coordinates(child, ebnf)
             return
@@ -118,7 +114,7 @@ def check_node_coordinates(node, ebnf):
             if node.startLine + i + 1 == node.endLine: text += line[:node.endColumn]
             else: text += line
 
-    assert text == repr(node)
+    assert text == str(node)
 
     for child in node:
         check_node_coordinates(child, ebnf)
