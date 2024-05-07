@@ -83,12 +83,10 @@ class Node:
     def __iter__(self):
         return self.children.__iter__()
     def __repr__(self):
-        ret = f"{self.startLine},{self.startColumn}-{self.endLine},{self.endColumn}\n"
-        if len(self.children) > 0:
-            for child in self:
-                for i in range(child.depth):
-                    ret += '\t'
-                ret += repr(child)
+        ret = f"{type(self).__name__}:{self.startLine},{self.startColumn}-{self.endLine},{self.endColumn}\n"
+        for child in self.children:
+            ret = ''.join([ret, '\t' * child.depth])
+            ret += repr(child)
         return ret
     def __str__(self):
         ret = ''
@@ -113,8 +111,6 @@ class Root(Node):
 
     """
 
-    def __repr__(self):
-        return f"Root:{super().__repr__()}"
 
 class Text(Node):
     """ Base class for leaf nodes.
@@ -143,10 +139,10 @@ class Text(Node):
     def __init__(self, start=None, data=''):
         super().__init__()
         self.data = data
+    def __repr__(self):
+        return f'({self.data})' + super().__repr__()
     def __str__(self):
         return self.data
-    def __repr__(self):
-        return f"Text({self.data}):{super().__repr__()}"
 class Comment(Node):
     """Nodes holding EBNF comments.
 
@@ -166,8 +162,6 @@ class Comment(Node):
 
     """
 
-    def __repr__(self):
-        return f"Comment:{super().__repr__()}"
 class Space(Text):
     """Node holding whitespace.
 
@@ -181,8 +175,6 @@ class Space(Text):
     """
     def __init__(self, data=''):
         super().__init__(None, data)
-    def  __repr__(self):
-        return f"Space:{Node.__repr__(self)}"
 class Literal(Text):
     """Node holding one or more characters.
 
@@ -203,8 +195,6 @@ class Literal(Text):
 
     def __init__(self, data=''):
         super().__init__(data)
-    def __repr__(self):
-        return f"Literal({self.data}):{Node.__repr__(self)}"
 
 class Product(Node):
     """ A node holding a product.
@@ -244,8 +234,6 @@ class Product(Node):
         if rhs != None:
             self.rhs = rhs
             self.addChild(rhs, pt)
-    def __repr__(self):
-        return f"Product:{super().__repr__()}"
 
 class DefinitionList(Node):
     """ Node containing a list of definitions.
@@ -264,8 +252,6 @@ class DefinitionList(Node):
     |Space|\ |maybe|, (|Definition|, |Space|\ |maybe|,
     |Literal| = '|' | '/' | '!')\ |any|, |Space|\ |maybe|.
     """
-    def __repr__(self):
-        return f"Definition list:{super().__repr__()}"
 
 class Definition(Node):
     """A node holding a definition.
@@ -283,8 +269,6 @@ class Definition(Node):
     |Literal| = ',', |Space|\ |maybe|)\ |any|.
 
     """
-    def __repr__(self):
-        return f"Definition:{super().__repr__()}"
 
 class Term(Node):
     """ Node holding a single term.
@@ -345,8 +329,6 @@ class Term(Node):
         if exception != None:
             self.addChild(exception)
 
-    def __repr__(self):
-        return f"Term:{super().__repr__()}"
 
 class Exception(Node):
     """ A node holding the exception to a term.
@@ -378,8 +360,6 @@ class Exception(Node):
         if primary != None:
             self.addChild(primary, pt)
 
-    def __repr__(self):
-        return f"Exception:{super().__repr__()}"
 
 class Repetition(Node):
     """A node holding how many times at most a term may be repeated.
@@ -402,8 +382,6 @@ class Repetition(Node):
     def __init__(self, count=0):
         super().__init__()
         self.count = count
-    def __repr__(self):
-        return f"Repetition({self.count}):{super().__repr__()}"
     def __str__(self):
         return str(self.count) + super().__str__()
 
@@ -431,8 +409,6 @@ class Terminal(Primary):
     |Literal| = '"' | "'" | '`', |Text|, |Literal| = '"' |
     "'" | '`'.
     """
-    def __repr__(self):
-        return f"Terminal:{super().__repr__()}"
 class Repeat(Primary):
     """ A node holding a repeatable group.
 
@@ -464,8 +440,6 @@ class Repeat(Primary):
         super().__init__()
         self.lit = lit
 
-    def __repr__(self):
-        return f"Repeat:{super().__repr__()}"
 class Option(Primary):
     """ A node holding an optional group.
 
@@ -497,8 +471,6 @@ class Option(Primary):
         super().__init__()
         self.lit = lit
 
-    def __repr__(self):
-        return f"Option:{super().__repr__()}"
 class Group(Primary):
     """ A node holding a group.
 
@@ -525,8 +497,6 @@ class Group(Primary):
         super().__init__()
         self.lit = lit
 
-    def __repr__(self):
-        return f"Group:{super().__repr__()}"
 class Special(Primary):
     """ A node holding a special sequence.
 
@@ -541,8 +511,6 @@ class Special(Primary):
 
     |Literal| = '?', |Text|, |Literal| = '?'.
     """
-    def __repr__(self):
-        return f"Special:{super().__repr__()}"
 
 class Identifier(Text, Primary):
     """Node holding an identifier.
@@ -597,10 +565,6 @@ class Identifier(Text, Primary):
         else:
             return None
 
-    def  __repr__(self):
-        return f"Identifier({self.data}):{Node.__repr__(self)}"
 class EmptyString(Text, Primary):
     """A node that holds nothing."""
 
-    def __repr__(self):
-        return f"EmptyString:{Node.__repr__(self)}"
