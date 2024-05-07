@@ -39,11 +39,11 @@ class Node:
     """
     parent = None
     children = []
+    depth = 0
     startLine = 0
     startColumn = 0
     endLine = 0
     endColumn = 0
-    depth = 0
 
     def unparse(self, write):
         write(str(self))
