@@ -57,8 +57,6 @@ class Node:
         pt.height = node.depth if node.depth > pt.height else pt.height
         pt.maxDegree = len(self.children) if len(self.children) > pt.maxDegree else pt.maxDegree
 
-        if len(self.children) > 1000:
-            breakpoint()
         return node
     def write(self, write, depth=0):
         write(repr(self))
