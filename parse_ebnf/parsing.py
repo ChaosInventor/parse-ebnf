@@ -193,9 +193,6 @@ def parseProduct(parent: nodes.Node, parser: ParserState) -> nodes.Product:
     product.startLine = parser.line
     product.startColumn = parser.column
 
-    if parser.c.isspace():
-        parseSpace(product, parser)
-
     parseIdentifier(product, parser)
 
     parseLiteral(product, '=', parser)
