@@ -95,6 +95,18 @@ class Node:
     def _parseNode(self, parser, node):
         self.addChild(node, parser.pt)
         return node.parse(parser)
+class Leaf(Node):
+    #TODO:
+    """Base type of all leaf nodes"""
+    data = ''
+
+    def __init__(self, start=None, data=''):
+        super().__init__()
+        self.data = data
+    def __repr__(self):
+        return f'({self.data})' + super().__repr__()
+    def __str__(self):
+        return self.data
 
 class Root(Node):
     """ The root PT node.
@@ -110,7 +122,7 @@ class Root(Node):
     """
 
 
-class Text(Node):
+class Text(Leaf):
     """ Base class for leaf nodes.
 
     This node is a base class for all leaf nodes, nodes whose ``children`` list
@@ -132,15 +144,6 @@ class Text(Node):
     ``None`` -- These nodes and their derived classes are always leaf nodes.
 
     """
-    data = ''
-
-    def __init__(self, start=None, data=''):
-        super().__init__()
-        self.data = data
-    def __repr__(self):
-        return f'({self.data})' + super().__repr__()
-    def __str__(self):
-        return self.data
 class Comment(Node):
     """Nodes holding EBNF comments.
 
@@ -160,7 +163,7 @@ class Comment(Node):
 
     """
 
-class Space(Text):
+class Space(Leaf):
     """Node holding whitespace.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
@@ -173,7 +176,7 @@ class Space(Text):
     """
     def __init__(self, data=''):
         super().__init__(None, data)
-class Literal(Text):
+class Literal(Leaf):
     """Node holding one or more characters.
 
     The actual character sequence depends on the parent. The parent nodes have
@@ -510,7 +513,7 @@ class Special(Primary):
     |Literal| = '?', |Text|, |Literal| = '?'.
     """
 
-class Identifier(Text, Primary):
+class Identifier(Leaf, Primary):
     """Node holding an identifier.
 
     Identifiers are alphanumeric string that do not start with a number. They
@@ -563,6 +566,6 @@ class Identifier(Text, Primary):
         else:
             return None
 
-class EmptyString(Text, Primary):
+class EmptyString(Leaf, Primary):
     """A node that holds nothing."""
 
