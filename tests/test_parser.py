@@ -34,7 +34,7 @@ def ebnf(ebnf_path):
 
     ebnf.close()
 
-def test_parser(tmp_path, ebnf):
+def test_pt_yield(tmp_path, ebnf):
     pt, file, path, partial = ebnf
 
     tmpFile = open(tmp_path/'tmp', 'w+')
