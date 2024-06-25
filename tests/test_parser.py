@@ -274,7 +274,7 @@ def count_node(node, depth=0):
         maxDegree = d if d > maxDegree else maxDegree
 
     return count, height, maxDegree
-def test_pt(ebnf):
+def test_pt_counters(ebnf):
     pt, file, path, partial = ebnf
 
     count, height, maxDegree = count_node(pt.root)
