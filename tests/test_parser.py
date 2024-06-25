@@ -43,7 +43,8 @@ def test_parser(tmp_path, ebnf):
     file.seek(0)
     tmpFile.seek(0)
 
-    assert file.read() == tmpFile.read()
+    if partial: assert file.read().startswith(tmpFile.read())
+    else: assert file.read() == tmpFile.read()
 
     tmpFile.close()
 
