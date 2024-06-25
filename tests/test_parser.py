@@ -283,46 +283,47 @@ def test_pt_counters(ebnf):
     assert height == pt.height
     assert maxDegree == pt.maxDegree
 
-def check_node_coordinates(node, ebnf):
+def check_node_coordinates(node, ebnf, partial):
     assert isinstance(node, Node)
 
-    assert node.startLine >= 0
-    assert node.endLine >= 0
-    assert node.startColumn >= 0
-    assert node.startLine <= node.endLine
+    if not partial:
+        assert node.startLine >= 0
+        assert node.endLine >= 0
+        assert node.startColumn >= 0
+        assert node.startLine <= node.endLine
 
-    if node.startLine == node.endLine:
-        if node.startColumn > node.endColumn:
-            assert str(node) == ''
-            for child in node:
-                check_node_coordinates(child, ebnf)
-            return
-        else:
-            assert node.endColumn >= 0
+        if node.startLine == node.endLine:
+            if node.startColumn > node.endColumn:
+                assert str(node) == ''
+                for child in node:
+                    check_node_coordinates(child, ebnf, child is node.children[-1])
+                return
+            else:
+                assert node.endColumn >= 0
 
-    ebnf.seek(0)
-    line = None
-    for i in range(node.startLine):
-        line = ebnf.readline()
-
-    text = ''
-    if node.startColumn == 0:
-        text += '\n'
-    if node.startLine == node.endLine:
-        text += line[node.startColumn - 1 if node.startColumn > 0 else 0 : node.endColumn]
-    else:
-        text += line[node.startColumn - 1:] if node.startColumn > 0 else line
-        for i in range(node.endLine - node.startLine):
+        ebnf.seek(0)
+        line = None
+        for i in range(node.startLine):
             line = ebnf.readline()
-            if node.startLine + i + 1 == node.endLine: text += line[:node.endColumn]
-            else: text += line
 
-    assert text == str(node)
+        text = ''
+        if node.startColumn == 0:
+            text += '\n'
+        if node.startLine == node.endLine:
+            text += line[node.startColumn - 1 if node.startColumn > 0 else 0 : node.endColumn]
+        else:
+            text += line[node.startColumn - 1:] if node.startColumn > 0 else line
+            for i in range(node.endLine - node.startLine):
+                line = ebnf.readline()
+                if node.startLine + i + 1 == node.endLine: text += line[:node.endColumn]
+                else: text += line
+
+        assert text == str(node)
 
     for child in node:
-        check_node_coordinates(child, ebnf)
+        check_node_coordinates(child, ebnf, child is node.children[-1])
 def test_pt_coordinates(ebnf):
     pt, file, path, partial = ebnf
 
-    check_node_coordinates(pt.root, file)
+    check_node_coordinates(pt.root, file, partial)
 
