@@ -5,6 +5,7 @@
 import pytest
 import glob
 import inspect
+import io
 from parse_ebnf import PT, parsing, EBNFError
 from parse_ebnf.nodes import *
 
@@ -34,19 +35,18 @@ def ebnf(ebnf_path):
 
     ebnf.close()
 
-def test_pt_yield(tmp_path, ebnf):
+def test_pt_yield(ebnf):
     pt, file, path, partial = ebnf
 
-    tmpFile = open(tmp_path/'tmp', 'w+')
-    pt.unparse(tmpFile.write)
+    buffer = io.StringIO()
+    pt.unparse(buffer.write)
 
     file.seek(0)
-    tmpFile.seek(0)
 
-    if partial: assert file.read().startswith(tmpFile.read())
-    else: assert file.read() == tmpFile.read()
+    if partial: assert file.read().startswith(buffer.getvalue())
+    else: assert file.read() == buffer.getvalue()
 
-    tmpFile.close()
+    buffer.close()
 
 def cleanArgs(*args):
     ret = []
