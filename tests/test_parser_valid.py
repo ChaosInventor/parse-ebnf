@@ -8,24 +8,34 @@ import inspect
 from parse_ebnf import PT, parsing, EBNFError
 from parse_ebnf.nodes import *
 
-pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
+pytestmark = pytest.mark.parametrize(
+        "ebnf_path",
+        [p for ps in [glob.glob("tests/resources/valid/*"),
+                      glob.glob("tests/resources/invalid/*")
+                     ] for p in ps])
 
 @pytest.fixture
 def ebnf(ebnf_path):
     ebnf = open(ebnf_path, 'r')
 
     pt = PT()
-    try:
-        pt = parsing.parsePT(ebnf.read)
-    except EBNFError as e:
-        raise e
+    partial = False
 
-    yield pt, ebnf, ebnf_path
+    if "/valid/" in ebnf_path: pt = parsing.parsePT(ebnf.read)
+    else:
+        with pytest.raises(EBNFError) as error:
+            pt = parsing.parsePT(ebnf.read)
+            #In case a syntax error did not occur, print the PT for inspection
+            print(str(pt))
+        pt = error.value.parser.pt
+        partial = True
+
+    yield pt, ebnf, ebnf_path, partial
 
     ebnf.close()
 
 def test_parser(tmp_path, ebnf):
-    pt, file, path = ebnf
+    pt, file, path, partial = ebnf
 
     tmpFile = open(tmp_path/'tmp', 'w+')
     pt.unparse(tmpFile.write)
@@ -243,7 +253,7 @@ def check_node_structure(node, depth=0):
     for child in node:
         check_node_structure(child, depth+1)
 def test_pt_structure(ebnf):
-    pt, file, path = ebnf
+    pt, file, path, partial = ebnf
 
     assert isinstance(pt.root, Root)
 
@@ -264,7 +274,7 @@ def count_node(node, depth=0):
 
     return count, height, maxDegree
 def test_pt(ebnf):
-    pt, file, path = ebnf
+    pt, file, path, partial = ebnf
 
     count, height, maxDegree = count_node(pt.root)
 
@@ -311,7 +321,7 @@ def check_node_coordinates(node, ebnf):
     for child in node:
         check_node_coordinates(child, ebnf)
 def test_pt_coordinates(ebnf):
-    pt, file, path = ebnf
+    pt, file, path, partial = ebnf
 
     check_node_coordinates(pt.root, file)
 
