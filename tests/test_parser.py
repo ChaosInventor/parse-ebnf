@@ -6,6 +6,7 @@ import pytest
 import glob
 import inspect
 import io
+import re
 from parse_ebnf import PT, parsing, EBNFError
 from parse_ebnf.nodes import *
 
@@ -123,10 +124,19 @@ def maybe(*args):
         except AssertionError: return index
 
     return m
-def check_node_children(node, *args):
+def check_node_children(node, partial, *args):
     i = 0
     p = predicate(*args)
-    newIndex = p(node, i)
+    newIndex = 0
+    try:
+        newIndex = p(node, i)
+    except AssertionError as e:
+        if partial:
+            #TODO: Less horrible way of doing this?
+            if re.match("ran out of children", e.args[0], re.I): return
+            elif node.children[newIndex] is node.children[-1]: return
+            else: raise e
+        else: raise e
     assert newIndex >= 0, "Error while checking node children"
     assert newIndex == len(node.children), "Did not check all node children, too many"
 def parent_is_either(node, *args):
@@ -135,7 +145,7 @@ def parent_is_either(node, *args):
         if isinstance(node.parent, arg): ret = True
 
     return ret
-def check_node_structure(node, depth=0):
+def check_node_structure(node, depth, partial):
     assert isinstance(node, Node)
     assert node.depth == depth
 
@@ -159,41 +169,43 @@ def check_node_structure(node, depth=0):
     if isinstance(node, Root):
         assert node.parent is None
 
-        check_node_children(node, zero_or_more(either(Comment, Product, Space)))
+        check_node_children(node, partial, zero_or_more(either(Comment, Product, Space)))
     elif isinstance(node, Comment):
         assert parent_is_either(node, Root, Comment)
 
-        check_node_children(node, literal("(*"), zero_or_more(either(Comment, Text)), literal("*)"))
+        check_node_children(node, partial, literal("(*"), zero_or_more(either(Comment, Text)), literal("*)"))
     elif isinstance(node, Product):
         assert parent_is_either(node, Root)
 
-        check_node_children(node, Identifier, maybe(Space), literal("="), maybe(Space), DefinitionList, maybe(Space), literal([";", "."]))
+        check_node_children(node, partial, Identifier, maybe(Space), literal("="), maybe(Space), DefinitionList, maybe(Space), literal([";", "."]))
     elif isinstance(node, Space):
         assert parent_is_either(node,
             Root, Product, DefinitionList, Definition, Term, Repetition,
             Exception, Repeat, Option, Group
         )
 
-        for c in node.data:
-            assert c.isspace()
+        if not partial:
+            for c in node.data:
+                assert c.isspace()
     elif isinstance(node, Literal):
         assert parent_is_either(node,
             Comment, Product, DefinitionList, Definition, Term, Repetition,
             Terminal, Repeat, Option, Group, Special
         )
 
-        assert node.data != ''
+        if not partial: assert node.data != ''
     elif isinstance(node, Identifier):
         assert parent_is_either(node, Product, Definition, Term, Exception)
 
-        assert node.data == node.data.rstrip()
-        assert node.data[0].isalpha()
-        for c in node.data:
-            assert c.isalpha() or c.isnumeric() or c.isspace()
+        if not partial:
+            assert node.data == node.data.rstrip()
+            assert node.data[0].isalpha()
+            for c in node.data:
+                assert c.isalpha() or c.isnumeric() or c.isspace()
     elif isinstance(node, DefinitionList):
         assert parent_is_either(node, Product, Repeat, Option, Group)
 
-        check_node_children(node,
+        check_node_children(node, partial,
             zero_or_more(maybe(Space), Definition, maybe(Space),
             literal(["|", "/", "!"])), maybe(Space), maybe(Definition),
             maybe(Space)
@@ -201,7 +213,7 @@ def check_node_structure(node, depth=0):
     elif isinstance(node, Definition):
         assert parent_is_either(node, DefinitionList)
 
-        check_node_children(node,
+        check_node_children(node, partial,
             maybe(Space), zero_or_more(Term, maybe(Space),
             literal(","), maybe(Space)), maybe(Term,
             maybe(literal(","))), maybe(Space)
@@ -209,56 +221,56 @@ def check_node_structure(node, depth=0):
     elif isinstance(node, Term):
         assert parent_is_either(node, Definition)
 
-        check_node_children(node,
+        check_node_children(node, partial,
             maybe(Space), maybe(Repetition), maybe(Space), Primary,
             maybe(Space), maybe(literal("-"), Exception)
         )
     elif isinstance(node, Repetition):
         assert parent_is_either(node, Term)
 
-        check_node_children(node, maybe(Space), literal("*"), maybe(Space))
+        check_node_children(node, partial, maybe(Space), literal("*"), maybe(Space))
     elif isinstance(node, Exception):
         assert parent_is_either(node, Term)
 
-        check_node_children(node, maybe(Space), Primary, maybe(Space))
+        check_node_children(node, partial, maybe(Space), Primary, maybe(Space))
     elif isinstance(node, Terminal):
         assert parent_is_either(node, Term, Exception)
 
-        check_node_children(node, literal(['"', "'", '`']), Text, literal(['"', "'", '`']))
+        check_node_children(node, partial, literal(['"', "'", '`']), Text, literal(['"', "'", '`']))
         assert node.children[0].data == node.children[2].data
     elif isinstance(node, Repeat):
         assert parent_is_either(node, Term, Exception)
 
-        check_node_children(node, literal(["{", "(/"]), maybe(Space), DefinitionList, literal(["}", "/)"]))
+        check_node_children(node, partial, literal(["{", "(/"]), maybe(Space), DefinitionList, literal(["}", "/)"]))
     elif isinstance(node, Option):
         assert parent_is_either(node, Term, Exception)
 
-        check_node_children(node, literal(["[", "(:"]), maybe(Space), DefinitionList, literal(["]", ":)"]))
+        check_node_children(node, partial, literal(["[", "(:"]), maybe(Space), DefinitionList, literal(["]", ":)"]))
     elif isinstance(node, Group):
         assert parent_is_either(node, Term, Exception)
 
-        check_node_children(node, literal("("), maybe(Space), DefinitionList, literal(")"))
+        check_node_children(node, partial, literal("("), maybe(Space), DefinitionList, literal(")"))
     elif isinstance(node, Special):
         assert parent_is_either(node, Term, Exception)
 
-        check_node_children(node, literal("?"), Text, literal("?"))
+        check_node_children(node, partial, literal("?"), Text, literal("?"))
     elif isinstance(node, EmptyString):
         assert parent_is_either(node, Term, Exception)
 
-        assert node.data == ''
+        if not partial: assert node.data == ''
     elif isinstance(node, Text):
         assert parent_is_either(node, Comment, Terminal, Special)
     else:
         raise BaseException("Unknown node type")
 
     for child in node:
-        check_node_structure(child, depth+1)
+        check_node_structure(child, depth+1, child is node.children[-1])
 def test_pt_structure(ebnf):
     pt, file, path, partial = ebnf
 
     assert isinstance(pt.root, Root)
 
-    check_node_structure(pt.root)
+    check_node_structure(pt.root, 0, partial)
 
 def count_node(node, depth=0):
     assert isinstance(node, Node)
