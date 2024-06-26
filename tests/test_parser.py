@@ -264,7 +264,7 @@ def check_node_structure(node, depth, partial):
         raise BaseException("Unknown node type")
 
     for child in node:
-        check_node_structure(child, depth+1, child is node.children[-1])
+        check_node_structure(child, depth+1, child is node.children[-1] and partial)
 def test_pt_structure(ebnf):
     pt, file, path, partial = ebnf
 
@@ -308,7 +308,7 @@ def check_node_coordinates(node, ebnf, partial):
             if node.startColumn > node.endColumn:
                 assert str(node) == ''
                 for child in node:
-                    check_node_coordinates(child, ebnf, child is node.children[-1])
+                    check_node_coordinates(child, ebnf, child is node.children[-1] and partial)
                 return
             else:
                 assert node.endColumn >= 0
@@ -333,7 +333,7 @@ def check_node_coordinates(node, ebnf, partial):
         assert text == str(node)
 
     for child in node:
-        check_node_coordinates(child, ebnf, child is node.children[-1])
+        check_node_coordinates(child, ebnf, child is node.children[-1] and partial)
 def test_pt_coordinates(ebnf):
     pt, file, path, partial = ebnf
 
