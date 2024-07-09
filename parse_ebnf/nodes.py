@@ -96,7 +96,6 @@ class Node:
         self.addChild(node, parser.pt)
         return node.parse(parser)
 class Leaf(Node):
-    #TODO:
     """Base type of all leaf nodes"""
     data = ''
 
@@ -107,6 +106,11 @@ class Leaf(Node):
         return f'({self.data})' + super().__repr__()
     def __str__(self):
         return self.data
+class Primary(Node):
+    """ A node holding what a term parses
+    TODO:
+    """
+    pass
 
 class Root(Node):
     """ The root PT node.
@@ -118,30 +122,6 @@ class Root(Node):
     .. rubric:: :ref:`Children <childrenEntry>`
 
     (|Product| |or| |Comment| |or| |Space|)\ |any|
-
-    """
-
-
-class Text(Leaf):
-    """ Base class for leaf nodes.
-
-    This node is a base class for all leaf nodes, nodes whose ``children`` list
-    is empty.
-
-    .. note:: Only leafs nodes contain text data in the tree.
-
-    This node has the following variables:
-
-    - Variables inherited from |Node|;
-    - ``data`` -- the text content of the node, a string.
-
-    .. rubric:: :ref:`Parent type <parentEntry>`
-
-    |Terminal| |or| |Space|.
-
-    .. rubric:: :ref:`Children <childrenEntry>`
-
-    ``None`` -- These nodes and their derived classes are always leaf nodes.
 
     """
 class Comment(Node):
@@ -162,41 +142,6 @@ class Comment(Node):
     ``[]``, leaf node, see |Text|.
 
     """
-
-class Space(Leaf):
-    """Node holding whitespace.
-
-    .. rubric:: :ref:`Parent type <parentEntry>`
-
-    ``Any``, just about every node that is not a leaf node holds this node.
-
-    .. rubric:: :ref:`Children <childrenEntry>`
-
-    ``None``, it is a leaf node, see |Text|.
-    """
-    def __init__(self, data=''):
-        super().__init__(None, data)
-class Literal(Leaf):
-    """Node holding one or more characters.
-
-    The actual character sequence depends on the parent. The parent nodes have
-    documentation pertaining to the exact sequence.
-
-    .. rubric:: :ref:`Parent type <parentEntry>`
-
-    |Product| |or| |DefinitionList| |or| |Definition| |or|
-    |Term| |or| |Exception| |or| |Repetition| |or|
-    |Terminal| |or| |Repeat| |or| |Option| |or|
-    |Group| |or| |Space|.
-
-    .. rubric:: :ref:`Children <childrenEntry>`
-
-    ``None``, it is a leaf node, see |Text|.
-    """
-
-    def __init__(self, data=''):
-        super().__init__(data)
-
 class Product(Node):
     """ A node holding a product.
 
@@ -235,7 +180,6 @@ class Product(Node):
         if rhs != None:
             self.rhs = rhs
             self.addChild(rhs, pt)
-
 class DefinitionList(Node):
     """ Node containing a list of definitions.
 
@@ -253,7 +197,6 @@ class DefinitionList(Node):
     |Space|\ |maybe|, (|Definition|, |Space|\ |maybe|,
     |Literal| = '|' | '/' | '!')\ |any|, |Space|\ |maybe|.
     """
-
 class Definition(Node):
     """A node holding a definition.
 
@@ -270,7 +213,6 @@ class Definition(Node):
     |Literal| = ',', |Space|\ |maybe|)\ |any|.
 
     """
-
 class Term(Node):
     """ Node holding a single term.
 
@@ -329,8 +271,6 @@ class Term(Node):
         self.exception = exception
         if exception != None:
             self.addChild(exception)
-
-
 class Exception(Node):
     """ A node holding the exception to a term.
 
@@ -360,8 +300,6 @@ class Exception(Node):
         self.primary = primary
         if primary != None:
             self.addChild(primary, pt)
-
-
 class Repetition(Node):
     """A node holding how many times at most a term may be repeated.
 
@@ -378,18 +316,6 @@ class Repetition(Node):
 
     |Space|\ |maybe|, |Literal| = '*', |Space|\ |maybe|.
     """
-
-class Number(Leaf):
-    """Holds a number.
-    """
-    def toInt():
-        return int(data)
-
-class Primary(Node):
-    """ A node holding what a term parses
-    TODO:
-    """
-    pass
 
 class Terminal(Primary):
     """A node holding a terminal.
@@ -439,7 +365,6 @@ class Repeat(Primary):
         assert isinstance(lit, Literal) or lit == None
         super().__init__()
         self.lit = lit
-
 class Option(Primary):
     """ A node holding an optional group.
 
@@ -470,7 +395,6 @@ class Option(Primary):
         assert isinstance(lit, Literal) or lit == None
         super().__init__()
         self.lit = lit
-
 class Group(Primary):
     """ A node holding a group.
 
@@ -496,7 +420,6 @@ class Group(Primary):
         assert isinstance(lit, Literal) or lit == None
         super().__init__()
         self.lit = lit
-
 class Special(Primary):
     """ A node holding a special sequence.
 
@@ -564,7 +487,66 @@ class Identifier(Leaf, Primary):
             return space
         else:
             return None
-
 class EmptyString(Leaf, Primary):
     """A node that holds nothing."""
 
+class Text(Leaf):
+    """ Base class for leaf nodes.
+
+    This node is a base class for all leaf nodes, nodes whose ``children`` list
+    is empty.
+
+    .. note:: Only leafs nodes contain text data in the tree.
+
+    This node has the following variables:
+
+    - Variables inherited from |Node|;
+    - ``data`` -- the text content of the node, a string.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Terminal| |or| |Space|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None`` -- These nodes and their derived classes are always leaf nodes.
+
+    """
+class Space(Leaf):
+    """Node holding whitespace.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    ``Any``, just about every node that is not a leaf node holds this node.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |Text|.
+    """
+    def __init__(self, data=''):
+        super().__init__(None, data)
+class Literal(Leaf):
+    """Node holding one or more characters.
+
+    The actual character sequence depends on the parent. The parent nodes have
+    documentation pertaining to the exact sequence.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    |Product| |or| |DefinitionList| |or| |Definition| |or|
+    |Term| |or| |Exception| |or| |Repetition| |or|
+    |Terminal| |or| |Repeat| |or| |Option| |or|
+    |Group| |or| |Space|.
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    ``None``, it is a leaf node, see |Text|.
+    """
+
+    def __init__(self, data=''):
+        super().__init__(data)
+class Number(Leaf):
+    """Holds a number.
+    """
+    def toInt():
+        return int(data)
