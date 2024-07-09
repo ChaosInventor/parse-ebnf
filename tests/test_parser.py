@@ -266,6 +266,8 @@ def check_node_structure(node, depth, partial):
         if not partial: assert node.data == ''
     elif isinstance(node, Text):
         assert parent_is_either(node, Comment, Terminal, Special)
+    elif isinstance(node, Node) or isinstance(node, Leaf) or isinstance(node, Primary):
+        assert False, "Node type not recognized or abstract classes instantiated in tree"
     else:
         raise BaseException("Unknown node type")
 
