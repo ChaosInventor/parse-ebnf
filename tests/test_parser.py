@@ -228,7 +228,13 @@ def check_node_structure(node, depth, partial):
     elif isinstance(node, Repetition):
         assert parent_is_either(node, Term)
 
-        check_node_children(node, partial, maybe(Space), literal("*"), maybe(Space))
+        check_node_children(node, partial, Number, maybe(Space), literal("*"))
+    elif isinstance(node, Number):
+        assert parent_is_either(node, Repetition)
+
+        if not partial:
+            for c in node.data:
+                assert c.isnumeric()
     elif isinstance(node, Exception):
         assert parent_is_either(node, Term)
 

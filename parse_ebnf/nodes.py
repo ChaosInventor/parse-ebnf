@@ -378,13 +378,12 @@ class Repetition(Node):
 
     |Space|\ |maybe|, |Literal| = '*', |Space|\ |maybe|.
     """
-    count = 0
 
-    def __init__(self, count=0):
-        super().__init__()
-        self.count = count
-    def __str__(self):
-        return str(self.count) + super().__str__()
+class Number(Leaf):
+    """Holds a number.
+    """
+    def toInt():
+        return int(data)
 
 class Primary(Node):
     """ A node holding what a term parses

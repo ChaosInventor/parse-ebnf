@@ -495,19 +495,13 @@ def parseTerm(parent: nodes.Node, parser: ParserState) -> nodes.Term:
     return term
 
 def parseRepetition(parent: nodes.Node, parser: ParserState) -> nodes.Repetition:
-    if not parser.c.isnumeric():
-        raise UnexpectedCharacterError(parser, 'expected a number')
-
     repetition = nodes.Repetition()
     parent.addChild(repetition, parser.pt)
 
     repetition.startLine = parser.line
     repetition.startColumn = parser.column
 
-    num = parser.c
-    while parser.readNoEOF(1, 'reading integer').isnumeric():
-        num += parser.c
-    repetition.count = int(num)
+    parseNumber(repetition, parser)
 
     if parser.c.isspace():
         parseSpace(repetition, parser)
@@ -585,6 +579,27 @@ def parsePrimary(parent: nodes.Node, parser: ParserState) -> nodes.Primary:
             raise ParsingError('Bug! Unreachable', parser)
     else:
         raise UnexpectedCharacterError(parser, f'expected a letter or one of {PRIMARY_START_SYMBOLS}')
+
+def parseNumber(parent: nodes.Node, parser: ParserState) -> nodes.Number:
+    number = nodes.Number()
+    parent.addChild(number, parser.pt)
+
+    number.startLine = parser.line
+    number.startColumn = parser.column
+
+    if not parser.c.isnumeric():
+        raise UnexpectedCharacterError(parser, 'expected a number')
+
+    number.data += parser.c
+    number.endLine = parser.line
+    number.endColumn = parser.column
+    while parser.read(1).isnumeric():
+        number.data += parser.c
+        number.endLine = parser.line
+        number.endColumn = parser.column
+
+    return number
+
 def parseEmptyTerm(parent: nodes.Node, parser: ParserState) -> nodes.Term:
     term = nodes.Term()
     parent.addChild(term, parser.pt)
