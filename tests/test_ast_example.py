@@ -16,9 +16,9 @@ def test_example_ast(ebnf_path):
 
     file = open(ebnf_path, 'r')
 
-    pt1 = parsing.parsePT(file.read)
+    pt1 = parsing.parse_pt(file.read)
     with StringIO('rule = term | another term;') as f:
-        pt2 = parsing.parsePT(f.read)
+        pt2 = parsing.parse_pt(f.read)
 
     print(repr(pt1.root.children[0]))
 

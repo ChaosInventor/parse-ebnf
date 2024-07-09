@@ -17,7 +17,7 @@ def test_example(ebnf_path):
 
     try:
         #Will raise SyntaxError on error with an error message describing what went wrong
-        pt = parsing.parsePT(ebnf.read)
+        pt = parsing.parse_pt(ebnf.read)
     finally:
         #Even after an error a partial tree will be generated.
         #str gives a text version of the parse tree(meant for debugging), while repr gives the text that it was produced from.

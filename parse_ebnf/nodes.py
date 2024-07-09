@@ -48,7 +48,7 @@ class Node:
     def unparse(self, write):
         write(str(self))
 
-    def addChild(self, node, pt):
+    def add_child(self, node, pt):
         self.children.append(node)
         node.parent = self
         node.depth = self.depth + 1
@@ -92,8 +92,8 @@ class Node:
             ret += str(child)
         return ret
 
-    def _parseNode(self, parser, node):
-        self.addChild(node, parser.pt)
+    def _parse_node(self, parser, node):
+        self.add_child(node, parser.pt)
         return node.parse(parser)
 class Leaf(Node):
     """Base type of all leaf nodes"""
@@ -176,10 +176,10 @@ class Product(Node):
             assert isinstance(pt, PT), f"Expected an abstract syntax tree, not a {pt.__class__}"
         if lhs != None:
             self.lhs = lhs
-            self.addChild(lhs, pt)
+            self.add_child(lhs, pt)
         if rhs != None:
             self.rhs = rhs
-            self.addChild(rhs, pt)
+            self.add_child(rhs, pt)
 class DefinitionList(Node):
     """ Node containing a list of definitions.
 
@@ -266,11 +266,11 @@ class Term(Node):
         self.repetition = repetition
         self.primary = primary
         if primary != None:
-            self.addChild(primary, pt)
+            self.add_child(primary, pt)
 
         self.exception = exception
         if exception != None:
-            self.addChild(exception)
+            self.add_child(exception)
 class Exception(Node):
     """ A node holding the exception to a term.
 
@@ -299,7 +299,7 @@ class Exception(Node):
         super().__init__()
         self.primary = primary
         if primary != None:
-            self.addChild(primary, pt)
+            self.add_child(primary, pt)
 class Repetition(Node):
     """A node holding how many times at most a term may be repeated.
 
@@ -548,5 +548,5 @@ class Literal(Leaf):
 class Number(Leaf):
     """Holds a number.
     """
-    def toInt():
+    def to_int():
         return int(data)

@@ -23,10 +23,10 @@ def ebnf(ebnf_path):
     pt = PT()
     partial = False
 
-    if "/valid/" in ebnf_path: pt = parsing.parsePT(ebnf.read)
+    if "/valid/" in ebnf_path: pt = parsing.parse_pt(ebnf.read)
     else:
         with pytest.raises(EBNFError) as error:
-            pt = parsing.parsePT(ebnf.read)
+            pt = parsing.parse_pt(ebnf.read)
             #In case a syntax error did not occur, print the PT for inspection
             print(str(pt))
         pt = error.value.parser.pt
@@ -49,7 +49,7 @@ def test_pt_yield(ebnf):
 
     buffer.close()
 
-def cleanArgs(*args):
+def clean_args(*args):
     ret = []
     for arg in args:
         if inspect.isclass(arg):
@@ -78,7 +78,7 @@ def literal(s):
 
     return l
 def predicate(*args):
-    cleaned = cleanArgs(*args)
+    cleaned = clean_args(*args)
 
     def p(node, index):
         i = index
@@ -89,7 +89,7 @@ def predicate(*args):
 
     return p
 def either(*args):
-    cleaned = cleanArgs(*args)
+    cleaned = clean_args(*args)
 
     def e(node, index):
         for arg in cleaned:
@@ -100,7 +100,7 @@ def either(*args):
 
     return e
 def zero_or_more(*args):
-    cleaned = cleanArgs(*args)
+    cleaned = clean_args(*args)
 
     def a(node, index):
         i = index

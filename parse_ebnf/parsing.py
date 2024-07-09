@@ -26,7 +26,7 @@ class ParserState:
     Finally has two helper functions for reading input:
 
      - `read`
-     - `readNoEOF`
+     - `read_no_eof`
 
     They help by maintaining `line`, `column` and `c`.
     """
@@ -47,7 +47,7 @@ class ParserState:
                 self.column += 1
 
         return self.c
-    def readNoEOF(self, n: int, msg: str | None=None):
+    def read_no_eof(self, n: int, msg: str | None=None):
         """Just like `read` except that it raises a `SyntaxError` with `msg` if
         no characters were read, that is EOF has been reached.
         """
@@ -71,15 +71,15 @@ class ParserState:
         return (f'read={repr(self.readFunc)}, c={self.c}, line={self.line}, '
                 f'column={self.column}, pt={repr(self.pt)}')
 
-def parsePT(read: Callable[[int], str]) -> PT:
+def parse_pt(read: Callable[[int], str]) -> PT:
     pt = PT()
 
     parser = ParserState(read, pt)
-    parseRoot(parser)
+    parse_root(parser)
 
     return pt
 
-def parseRoot(parser: ParserState) -> nodes.Root:
+def parse_root(parser: ParserState) -> nodes.Root:
     root = nodes.Root()
     parser.pt.root = root
     parser.pt.count = 1
@@ -91,11 +91,11 @@ def parseRoot(parser: ParserState) -> nodes.Root:
 
     while len(parser.c) > 0:
         if parser.c == '(':
-            parseComment(root, parser)
+            parse_comment(root, parser)
         elif parser.c.isalpha():
-            parseProduct(root, parser)
+            parse_product(root, parser)
         elif parser.c.isspace():
-            parseSpace(root, parser)
+            parse_space(root, parser)
         else:
             raise UnexpectedCharacterError(
                     parser, 'expected an alphanumeric character, white space or'
@@ -106,18 +106,18 @@ def parseRoot(parser: ParserState) -> nodes.Root:
 
     return root
 
-def parseComment(parent: nodes.Node, parser: ParserState,
+def parse_comment(parent: nodes.Node, parser: ParserState,
                  startLit: nodes.Literal = None) -> nodes.Comment:
     comment = nodes.Comment()
-    parent.addChild(comment, parser.pt)
+    parent.add_child(comment, parser.pt)
 
     comment.startLine = parser.line
     comment.startColumn = parser.column
 
     if startLit is None:
-        parseLiteral(comment, '(*', parser)
+        parse_literal(comment, '(*', parser)
     else:
-        comment.addChild(startLit, parser.pt)
+        comment.add_child(startLit, parser.pt)
         comment.startLine = startLit.startLine
         comment.startColumn = startLit.startColumn
 
@@ -132,21 +132,21 @@ def parseComment(parent: nodes.Node, parser: ParserState,
             literal.startLine = parser.line
             literal.startColumn = parser.column
 
-            parser.readNoEOF(1, 'comment not terminated')
+            parser.read_no_eof(1, 'comment not terminated')
 
             literal.endLine = parser.line
             literal.endColumn = parser.column
 
             if oc == '*' and parser.c == ')':
                 literal.data = '*)'
-                comment.addChild(literal, parser.pt)
+                comment.add_child(literal, parser.pt)
 
                 break
             elif oc == '(' and parser.c == '*':
                 literal.data = '(*'
 
-                parser.readNoEOF(1, 'comment not terminated')
-                parseComment(comment, parser, literal)
+                parser.read_no_eof(1, 'comment not terminated')
+                parse_comment(comment, parser, literal)
 
                 text = None
 
@@ -154,7 +154,7 @@ def parseComment(parent: nodes.Node, parser: ParserState,
             else:
                 if text is None:
                     text = nodes.Text()
-                    comment.addChild(text, parser.pt)
+                    comment.add_child(text, parser.pt)
 
                     text.startLine = parser.line
                     text.startColumn = parser.column
@@ -165,7 +165,7 @@ def parseComment(parent: nodes.Node, parser: ParserState,
 
         if text is None:
             text = nodes.Text()
-            comment.addChild(text, parser.pt)
+            comment.add_child(text, parser.pt)
 
             text.startLine = parser.line
             text.startColumn = parser.column
@@ -174,7 +174,7 @@ def parseComment(parent: nodes.Node, parser: ParserState,
         text.data += parser.c
         text.endLine = parser.line
         text.endColumn = parser.column
-        parser.readNoEOF(1, 'comment not terminated')
+        parser.read_no_eof(1, 'comment not terminated')
 
     comment.endLine = parser.line
     comment.endColumn = parser.column
@@ -183,38 +183,38 @@ def parseComment(parent: nodes.Node, parser: ParserState,
 
     return comment
 
-def parseProduct(parent: nodes.Node, parser: ParserState) -> nodes.Product:
+def parse_product(parent: nodes.Node, parser: ParserState) -> nodes.Product:
     if not parser.c.isalpha():
         raise UnexpectedCharacterError(parser, 'expected a letter')
 
     product = nodes.Product()
-    parent.addChild(product, parser.pt)
+    parent.add_child(product, parser.pt)
 
     product.startLine = parser.line
     product.startColumn = parser.column
 
-    parseIdentifier(product, parser)
+    parse_identifier(product, parser)
 
-    parseLiteral(product, '=', parser)
+    parse_literal(product, '=', parser)
 
     if parser.c.isspace():
-        parseSpace(product, parser)
+        parse_space(product, parser)
 
-    defList, lit = parseDefinitionList(product, parser)
+    defList, lit = parse_definition_list(product, parser)
 
     if lit is not None:
         raise UnexpectedLiteralError(otherLit, parser)
 
-    lit = parseLiteral(product, PRODUCT_TERMINATOR_SYMBOLS, parser)
+    lit = parse_literal(product, PRODUCT_TERMINATOR_SYMBOLS, parser)
 
     product.endLine = lit.endLine
     product.endColumn = lit.endColumn
 
     return product
 
-def parseSpace(parent: nodes.Node, parser: ParserState) -> nodes.Space:
+def parse_space(parent: nodes.Node, parser: ParserState) -> nodes.Space:
     space = nodes.Space()
-    parent.addChild(space, parser.pt)
+    parent.add_child(space, parser.pt)
 
     if not parser.c.isspace():
         raise NoSpaceError(parser)
@@ -232,10 +232,10 @@ def parseSpace(parent: nodes.Node, parser: ParserState) -> nodes.Space:
 
     return space
 
-def parseLiteral(parent: nodes.Node, literals: str | list,
+def parse_literal(parent: nodes.Node, literals: str | list,
                  parser: ParserState) -> nodes.Literal:
     literal = nodes.Literal()
-    parent.addChild(literal, parser.pt)
+    parent.add_child(literal, parser.pt)
 
     literal.startLine = parser.line
     literal.startColumn = parser.column
@@ -252,7 +252,7 @@ def parseLiteral(parent: nodes.Node, literals: str | list,
             literal.endLine = parser.line
             literal.endColumn = parser.column
 
-            parser.readNoEOF(1, 'reading literal')
+            parser.read_no_eof(1, 'reading literal')
 
         literal.data = read
     else:
@@ -285,7 +285,7 @@ def parseLiteral(parent: nodes.Node, literals: str | list,
             if len(potentialMatches) == 0:
                 break
             else:
-                parser.readNoEOF(1, 'reading literal')
+                parser.read_no_eof(1, 'reading literal')
 
         if len(matches) == 0:
             raise NoLiteralError(parser, literals, read)
@@ -302,12 +302,12 @@ def parseLiteral(parent: nodes.Node, literals: str | list,
 
     return literal
 
-def parseIdentifier(parent: nodes.Node, parser: ParserState) -> nodes.Identifier:
+def parse_identifier(parent: nodes.Node, parser: ParserState) -> nodes.Identifier:
     if not parser.c.isalpha():
         raise UnexpectedCharacterError(parser, 'expected a letter')
 
     identifier = nodes.Identifier()
-    parent.addChild(identifier, parser.pt)
+    parent.add_child(identifier, parser.pt)
 
     identifier.startLine = parser.line
     identifier.startColumn = parser.column
@@ -352,7 +352,7 @@ def parseIdentifier(parent: nodes.Node, parser: ParserState) -> nodes.Identifier
         return identifier
 
     space = nodes.Space()
-    parent.addChild(space, parser.pt)
+    parent.add_child(space, parser.pt)
 
     space.startLine = trailingWhiteSpaceStartLine
     space.startColumn = trailingWhiteSpaceStartColumn
@@ -364,9 +364,9 @@ def parseIdentifier(parent: nodes.Node, parser: ParserState) -> nodes.Identifier
 
     return identifier, space
 
-def parseDefinitionList(parent: nodes.Node, parser: ParserState) -> nodes.DefinitionList:
+def parse_definition_list(parent: nodes.Node, parser: ParserState) -> nodes.DefinitionList:
     definitionList = nodes.DefinitionList()
-    parent.addChild(definitionList, parser.pt)
+    parent.add_child(definitionList, parser.pt)
 
     definitionList.startLine = parser.line
     definitionList.startColumn = parser.column
@@ -375,12 +375,12 @@ def parseDefinitionList(parent: nodes.Node, parser: ParserState) -> nodes.Defini
     #special case of an `\)` literal.
     while True:
         if parser.c.isspace():
-            parseSpace(definitionList, parser)
+            parse_space(definitionList, parser)
 
-        parseDefinition(definitionList, parser)
+        parse_definition(definitionList, parser)
 
         if parser.c.isspace():
-            parseSpace(definitionList, parser)
+            parse_space(definitionList, parser)
 
         definitionList.endLine = parser.line
         definitionList.endColumn = parser.column - 1
@@ -395,7 +395,7 @@ def parseDefinitionList(parent: nodes.Node, parser: ParserState) -> nodes.Defini
                 lit.endLine = parser.line
                 lit.endColumn = parser.column
 
-                parser.readNoEOF(1, 'definition list not terminated')
+                parser.read_no_eof(1, 'definition list not terminated')
                 if parser.c == ')':
                     lit.data = '/)'
                     lit.endColumn = parser.column
@@ -407,17 +407,17 @@ def parseDefinitionList(parent: nodes.Node, parser: ParserState) -> nodes.Defini
                     return definitionList, lit
                 else:
                     lit.data = '/'
-                    definitionList.addChild(lit, parser.pt)
+                    definitionList.add_child(lit, parser.pt)
             else:
-                parseLiteral(definitionList, DEFINITION_SEPARATORS, parser)
+                parse_literal(definitionList, DEFINITION_SEPARATORS, parser)
         else:
             break
 
     return definitionList, None
 
-def parseDefinition(parent: nodes.Node, parser: ParserState) -> nodes.DefinitionList:
+def parse_definition(parent: nodes.Node, parser: ParserState) -> nodes.DefinitionList:
     definition = nodes.Definition()
-    parent.addChild(definition, parser.pt)
+    parent.add_child(definition, parser.pt)
 
     definition.startLine = parser.line
     definition.startColumn = parser.column
@@ -435,30 +435,30 @@ def parseDefinition(parent: nodes.Node, parser: ParserState) -> nodes.Definition
                            )
 
         if parser.c.isspace():
-            parseSpace(definition, parser)
+            parse_space(definition, parser)
         elif parser.c.isalpha() or parser.c.isnumeric() or parser.c in PRIMARY_START_SYMBOLS:
             if term != None:
                 raise UndelimitedTermError(term, parser)
-            term = parseTerm(definition, parser)
+            term = parse_term(definition, parser)
         elif parser.c == ',':
             if term == None:
-                parseEmptyTerm(definition, parser)
+                parse_empty_term(definition, parser)
 
-            parseLiteral(definition, ',', parser)
+            parse_literal(definition, ',', parser)
             term = None
         else:
             #Let the parent handle it
             break;
 
     if term == None:
-        parseEmptyTerm(definition, parser)
+        parse_empty_term(definition, parser)
     definition.endLine = parser.line
     definition.endColumn = parser.column - 1
     return definition
 
-def parseTerm(parent: nodes.Node, parser: ParserState) -> nodes.Term:
+def parse_term(parent: nodes.Node, parser: ParserState) -> nodes.Term:
     term = nodes.Term()
-    parent.addChild(term, parser.pt)
+    parent.add_child(term, parser.pt)
 
     term.startLine = parser.line
     term.startColumn = parser.column
@@ -466,86 +466,86 @@ def parseTerm(parent: nodes.Node, parser: ParserState) -> nodes.Term:
     #Breaks when it can't handle something
     while True:
         if parser.c.isspace():
-            parseSpace(term, parser)
+            parse_space(term, parser)
         elif parser.c.isnumeric():
             if term.repetition != None:
                 raise MultipleTermRepetitions(term, parser)
 
-            term.repetition = parseRepetition(term, parser)
+            term.repetition = parse_repetition(term, parser)
         elif parser.c == '-':
             if term.exception != None:
                 raise MultipleTermExceptions(term, parser)
 
-            parseLiteral(term, '-', parser)
-            term.exception = parseException(term, parser)
+            parse_literal(term, '-', parser)
+            term.exception = parse_exception(term, parser)
         elif parser.c.isalpha() or parser.c in PRIMARY_START_SYMBOLS:
             if term.primary != None:
                 raise MultipleTermPrimariesError(term, parser)
 
-            term.primary = parsePrimary(term, parser)
+            term.primary = parse_primary(term, parser)
         else:
             #Let the parent handle it
             break
 
     if term.primary == None:
-        term.primary = parseEmptyString(term, parser)
+        term.primary = parse_empty_string(term, parser)
 
     term.endLine = term.children[-1].endLine
     term.endColumn = term.children[-1].endColumn
     return term
 
-def parseRepetition(parent: nodes.Node, parser: ParserState) -> nodes.Repetition:
+def parse_repetition(parent: nodes.Node, parser: ParserState) -> nodes.Repetition:
     repetition = nodes.Repetition()
-    parent.addChild(repetition, parser.pt)
+    parent.add_child(repetition, parser.pt)
 
     repetition.startLine = parser.line
     repetition.startColumn = parser.column
 
-    parseNumber(repetition, parser)
+    parse_number(repetition, parser)
 
     if parser.c.isspace():
-        parseSpace(repetition, parser)
+        parse_space(repetition, parser)
 
     repetition.endLine = parser.line
     repetition.endColumn = parser.column
-    parseLiteral(repetition, '*', parser)
+    parse_literal(repetition, '*', parser)
 
     return repetition
 
-def parseException(parent: nodes.Node, parser: ParserState) -> nodes.Exception:
+def parse_exception(parent: nodes.Node, parser: ParserState) -> nodes.Exception:
     exception = nodes.Exception()
-    parent.addChild(exception, parser.pt)
+    parent.add_child(exception, parser.pt)
 
     exception.startLine = parser.line
     exception.startColumn = parser.column
 
     while True:
         if parser.c.isspace():
-            parseSpace(exception, parser)
+            parse_space(exception, parser)
         elif parser.c.isalpha() or parser.c in PRIMARY_START_SYMBOLS:
-            exception.primary = parsePrimary(exception, parser)
+            exception.primary = parse_primary(exception, parser)
         else:
             #Let the parent handle it
             break
 
     if exception.primary == None:
-        exception.primary = parseEmptyString(exception, parser)
+        exception.primary = parse_empty_string(exception, parser)
 
     exception.endLine = exception.children[-1].endLine
     exception.endColumn = exception.children[-1].endColumn
     return exception
 
-def parsePrimary(parent: nodes.Node, parser: ParserState) -> nodes.Primary:
+def parse_primary(parent: nodes.Node, parser: ParserState) -> nodes.Primary:
     if parser.c.isalpha() or parser.c in PRIMARY_START_SYMBOLS:
 
         if parser.c.isalpha():
-            return parseIdentifier(parent, parser)
+            return parse_identifier(parent, parser)
         elif parser.c in TERMINAL_START_SYMBOLS:
-            return parseTerminal(parent, parser)
+            return parse_terminal(parent, parser)
         elif parser.c == '{':
-            return parseRepeat(parent, None, parser)
+            return parse_repeat(parent, None, parser)
         elif parser.c == '[':
-            return parseOption(parent, None, parser)
+            return parse_option(parent, None, parser)
         elif parser.c == '(':
             lit = nodes.Literal()
 
@@ -556,7 +556,7 @@ def parsePrimary(parent: nodes.Node, parser: ParserState) -> nodes.Primary:
 
             lit.data += '('
 
-            parser.readNoEOF(1, 'reading primary')
+            parser.read_no_eof(1, 'reading primary')
 
             if parser.c in ['/', ':']:
                 lit.data += parser.c
@@ -566,23 +566,23 @@ def parsePrimary(parent: nodes.Node, parser: ParserState) -> nodes.Primary:
                 parser.read(1)
 
                 if oc == '/':
-                    return parseRepeat(parent, lit, parser)
+                    return parse_repeat(parent, lit, parser)
                 elif oc == ':':
-                    return parseOption(parent, lit, parser)
+                    return parse_option(parent, lit, parser)
                 else:
                     raise ParsingError('Bug! Unreachable', parser)
             else:
-                return parseGroup(parent, lit, parser)
+                return parse_group(parent, lit, parser)
         elif parser.c == '?':
-            return parseSpecial(parent, parser)
+            return parse_special(parent, parser)
         else:
             raise ParsingError('Bug! Unreachable', parser)
     else:
         raise UnexpectedCharacterError(parser, f'expected a letter or one of {PRIMARY_START_SYMBOLS}')
 
-def parseNumber(parent: nodes.Node, parser: ParserState) -> nodes.Number:
+def parse_number(parent: nodes.Node, parser: ParserState) -> nodes.Number:
     number = nodes.Number()
-    parent.addChild(number, parser.pt)
+    parent.add_child(number, parser.pt)
 
     number.startLine = parser.line
     number.startColumn = parser.column
@@ -600,20 +600,20 @@ def parseNumber(parent: nodes.Node, parser: ParserState) -> nodes.Number:
 
     return number
 
-def parseEmptyTerm(parent: nodes.Node, parser: ParserState) -> nodes.Term:
+def parse_empty_term(parent: nodes.Node, parser: ParserState) -> nodes.Term:
     term = nodes.Term()
-    parent.addChild(term, parser.pt)
+    parent.add_child(term, parser.pt)
 
     term.startLine = parser.line
     term.endLine = parser.line
     term.startColumn = parser.column
     term.endColumn = parser.column - 1
 
-    term.primary = parseEmptyString(term, parser)
+    term.primary = parse_empty_string(term, parser)
 
     return term
 
-def parseTerminal(parent: nodes.Node, parser: ParserState) -> nodes.Terminal:
+def parse_terminal(parent: nodes.Node, parser: ParserState) -> nodes.Terminal:
     if not parser.c in TERMINAL_START_SYMBOLS:
         raise UnexpectedCharacterError(parser,
                                        f'one of '
@@ -621,22 +621,22 @@ def parseTerminal(parent: nodes.Node, parser: ParserState) -> nodes.Terminal:
                                        )
 
     terminal = nodes.Terminal()
-    parent.addChild(terminal, parser.pt)
+    parent.add_child(terminal, parser.pt)
 
     terminal.startLine = parser.line
     terminal.startColumn = parser.column
 
-    lit = parseLiteral(terminal, parser.c, parser)
+    lit = parse_literal(terminal, parser.c, parser)
 
     text = nodes.Text()
-    terminal.addChild(text, parser.pt)
+    terminal.add_child(text, parser.pt)
 
     text.startLine = parser.line
     text.startColumn = parser.column
 
     while parser.c != lit.data:
         text.data += parser.c
-        parser.readNoEOF(1, 'reading terminal')
+        parser.read_no_eof(1, 'reading terminal')
 
     text.endLine = parser.line
     text.endColumn = parser.column - 1
@@ -644,62 +644,62 @@ def parseTerminal(parent: nodes.Node, parser: ParserState) -> nodes.Terminal:
     terminal.endLine = parser.line
     terminal.endColumn = parser.column
 
-    parseLiteral(terminal, lit.data, parser)
+    parse_literal(terminal, lit.data, parser)
 
     return terminal
 
-def parseRepeat(parent: nodes.Node, lit: nodes.Literal | None,
+def parse_repeat(parent: nodes.Node, lit: nodes.Literal | None,
                 parser: ParserState) -> nodes.Repeat:
     repeat = nodes.Repeat()
-    parent.addChild(repeat, parser.pt)
+    parent.add_child(repeat, parser.pt)
 
     repeat.startLine = parser.line
     repeat.startColumn = parser.column
 
     if lit is None:
-        parseLiteral(repeat, ['{', '(/'], parser)
+        parse_literal(repeat, ['{', '(/'], parser)
     else:
-        repeat.addChild(lit, parser.pt)
+        repeat.add_child(lit, parser.pt)
         repeat.startLine = lit.startLine
         repeat.startColumn = lit.startColumn
 
     if parser.c.isspace():
-        parseSpace(repeat, parser)
+        parse_space(repeat, parser)
 
-    defList, lit = parseDefinitionList(repeat, parser)
+    defList, lit = parse_definition_list(repeat, parser)
 
     if lit is None:
         repeat.endLine = parser.line
         repeat.endColumn = parser.column
         #No need to check for '/)' since the definition list would have parsed
         #it if it were there.
-        parseLiteral(repeat, '}', parser)
+        parse_literal(repeat, '}', parser)
     else:
         repeat.endLine = lit.endLine
         repeat.endColumn = lit.endColumn
-        repeat.addChild(lit, parser.pt)
+        repeat.add_child(lit, parser.pt)
 
     return repeat
 
-def parseOption(parent: nodes.Node, lit: nodes.Literal | None,
+def parse_option(parent: nodes.Node, lit: nodes.Literal | None,
                 parser: ParserState) -> nodes.Option:
     option = nodes.Option()
-    parent.addChild(option, parser.pt)
+    parent.add_child(option, parser.pt)
 
     option.startLine = parser.line
     option.startColumn = parser.column
 
     if lit is None:
-        parseLiteral(option, ['(:', '['], parser)
+        parse_literal(option, ['(:', '['], parser)
     else:
-        option.addChild(lit, parser.pt)
+        option.add_child(lit, parser.pt)
         option.startLine = lit.startLine
         option.startColumn = lit.startColumn
 
     if parser.c.isspace():
-        parseSpace(option, parser)
+        parse_space(option, parser)
 
-    defList, otherLit = parseDefinitionList(option, parser)
+    defList, otherLit = parse_definition_list(option, parser)
 
     if otherLit is not None:
         raise UnexpectedLiteralError(otherLit, parser)
@@ -707,32 +707,32 @@ def parseOption(parent: nodes.Node, lit: nodes.Literal | None,
     option.endLine = parser.line
     option.endColumn = parser.column
 
-    lit = parseLiteral(option, [']', ':)'], parser)
+    lit = parse_literal(option, [']', ':)'], parser)
 
     if lit.data == ':)':
         option.endColumn += 1
 
     return option
 
-def parseGroup(parent: nodes.Node, lit: nodes.Literal| None,
+def parse_group(parent: nodes.Node, lit: nodes.Literal| None,
                parser: ParserState) -> nodes.Group:
     group = nodes.Group()
-    parent.addChild(group, parser.pt)
+    parent.add_child(group, parser.pt)
 
     group.startLine = parser.line
     group.startColumn = parser.column
 
     if lit is None:
-        parseLiteral(group, '(', parser)
+        parse_literal(group, '(', parser)
     else:
-        group.addChild(lit, parser.pt)
+        group.add_child(lit, parser.pt)
         group.startLine = lit.startLine
         group.startColumn = lit.startColumn
 
     if parser.c.isspace():
-        parseSpace(group, parser)
+        parse_space(group, parser)
 
-    defList, otherLit = parseDefinitionList(group, parser)
+    defList, otherLit = parse_definition_list(group, parser)
 
     if otherLit is not None:
         raise UnexpectedLiteralError(otherLit, parser)
@@ -740,41 +740,41 @@ def parseGroup(parent: nodes.Node, lit: nodes.Literal| None,
     group.endLine = parser.line
     group.endColumn = parser.column
 
-    parseLiteral(group, ')', parser)
+    parse_literal(group, ')', parser)
 
     return group
 
-def parseSpecial(parent: nodes.Node, parser: ParserState) -> nodes.Special:
+def parse_special(parent: nodes.Node, parser: ParserState) -> nodes.Special:
     special = nodes.Special()
-    parent.addChild(special, parser.pt)
+    parent.add_child(special, parser.pt)
 
     special.startLine = parser.line
     special.startColumn = parser.column
 
-    parseLiteral(special, '?', parser)
+    parse_literal(special, '?', parser)
 
     text = nodes.Text()
     text.startLine = parser.line
     text.startColumn = parser.column
     text.endLine = parser.line
     text.endColumn = parser.column - 1
-    special.addChild(text, parser.pt)
+    special.add_child(text, parser.pt)
     while parser.c != '?':
         text.data += parser.c
         text.endLine = parser.line
         text.endColumn = parser.column
-        parser.readNoEOF(1, 'reading special')
+        parser.read_no_eof(1, 'reading special')
 
     special.endLine = parser.line
     special.endColumn = parser.column
 
-    parseLiteral(special, '?', parser)
+    parse_literal(special, '?', parser)
 
     return special
 
-def parseEmptyString(parent: nodes.Node, parser: ParserState) -> nodes.EmptyString:
+def parse_empty_string(parent: nodes.Node, parser: ParserState) -> nodes.EmptyString:
     emptyString = nodes.EmptyString()
-    parent.addChild(emptyString, parser.pt)
+    parent.add_child(emptyString, parser.pt)
 
     emptyString.startLine = parser.line
     emptyString.startColumn = parser.column

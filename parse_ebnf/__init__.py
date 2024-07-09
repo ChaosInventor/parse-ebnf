@@ -37,9 +37,9 @@ class PT:
 
         file = open('your-ebnf-file.ebnf', 'r')
 
-        pt1 = parsing.parsePT(file.read)
+        pt1 = parsing.parse_pt(file.read)
         with StringIO('rule = term | another term;') as f:
-            pt2 = parsing.parsePT(f.read)
+            pt2 = parsing.parse_pt(f.read)
 
         #You now have two useable parse trees, pt1 and pt2
 
@@ -91,4 +91,4 @@ class EBNFError(Exception):
 
 #def parse(ebfn: str):
 #    source = open(ebnf)
-#    return parsing.parsePT(source.read)
+#    return parsing.parse_pt(source.read)

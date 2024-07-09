@@ -36,7 +36,7 @@ pt = PT()
 
 try:
     #Will raise SyntaxError on error with an error message describing what went wrong
-    pt = parsing.parsePT(ebnf.read) #You need to pass in a function that returns n characters where n is given as the first parameter.
+    pt = parsing.parse_pt(ebnf.read) #You need to pass in a function that returns n characters where n is given as the first parameter.
 finally:
     #Even after an error a partial tree will be generated.
     #str gives a text version of the parse tree(meant for debugging), while repr gives the text that it was produced from.
