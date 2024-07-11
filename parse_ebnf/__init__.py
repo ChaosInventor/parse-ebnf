@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from parse_ebnf import nodes
+from io import StringIO
+from collections.abc import Callable
 
 class PT:
     """A parse tree for EBNF.
@@ -89,6 +91,9 @@ class PT:
 class EBNFError(Exception):
     pass
 
-#def parse(ebfn: str):
-#    source = open(ebnf)
-#    return parsing.parse_pt(source.read)
+def parseFile(ebnf: str) -> PT:
+    return parsing.parse_pt(open(ebnf).read)
+def parseString(ebnf: str) -> PT:
+    return parsing.parse_pt(StringIO(ebnf).read)
+def parseFromFunction(read: Callable[[int], str]) -> PT:
+    return parsing.parse_pt(read)
