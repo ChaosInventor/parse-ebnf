@@ -89,8 +89,11 @@ def check_node_children(node, partial, *args):
     except AssertionError as e:
         if partial:
             #TODO: Less horrible way of doing this?
-            print(e)
-            if re.match("ran out of children", e.args[0], re.I): return
+            if len(e.args) > 0 and re.match("ran out of children", e.args[0], re.I):
+                return
+            #TODO: newIndex is not actually updated when an exception is raised,
+            #it is always zero. Fix this and check if the predicate that raised
+            #the exception was examining the last node.
             elif node.children[newIndex] is node.children[-1]: return
             else: raise e
         else: raise e
