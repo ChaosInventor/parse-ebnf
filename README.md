@@ -30,7 +30,7 @@ pip install parse-ebnf
 from parse_ebnf import parse_file, EBNFError
 
 try:
-    #Your EBNF file goes here
+    #Your EBNF file goes here.
     pt = parse_file(ebnf_path)
     partial = False
 except EBNFError as e:
@@ -60,12 +60,12 @@ def DepthFirst(node, partial, func):
             DepthFirst(child, False, func)
 
 #This will visit each node in the parse tree and print the line where its
-#text begins
+#text begins.
 DepthFirst(pt.root, partial, lambda node: print(node.startLine))
 
 from parse_ebnf.nodes import Comment
 
-#Finds each comment in the file and prints its text content
+#Finds each comment in the file and prints its text content.
 for child in pt.root.children:
     if isinstance(child, Comment):
         #A tree being partial means that its root is partial.
