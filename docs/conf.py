@@ -11,7 +11,7 @@ import sys, os
 project = 'parse-ebnf'
 copyright = '2023, ChaosInventor'
 author = 'ChaosInventor'
-release = '1.0'
+release = '2.0'
 
 sys.path.append('..')
 
@@ -26,12 +26,10 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 rst_prolog = """
 .. |PT| replace:: :py:class:`PT <parse_ebnf.PT>`
 .. |Node| replace:: :py:class:`Node <parse_ebnf.nodes.Node>`
+.. |Leaf| replace:: :py:class:`Leaf <parse_ebnf.nodes.Leaf>`
+.. |Primary| replace:: :py:class:`Primary <parse_ebnf.nodes.Primary>`
 .. |Root| replace:: :py:class:`Root <parse_ebnf.nodes.Root>`
-.. |Text| replace:: :py:class:`Text <parse_ebnf.nodes.Text>`
 .. |Comment| replace:: :py:class:`Comment <parse_ebnf.nodes.Comment>`
-.. |Space| replace:: :py:class:`Space <parse_ebnf.nodes.Space>`
-.. |Identifier| replace:: :py:class:`Identifier <parse_ebnf.nodes.Identifier>`
-.. |Literal| replace:: :py:class:`Literal <parse_ebnf.nodes.Literal>`
 .. |Product| replace:: :py:class:`Product <parse_ebnf.nodes.Product>`
 .. |DefinitionList| replace:: :py:class:`DefinitionList <parse_ebnf.nodes.DefinitionList>`
 .. |Definition| replace:: :py:class:`Definition <parse_ebnf.nodes.Definition>`
@@ -43,13 +41,12 @@ rst_prolog = """
 .. |Option| replace:: :py:class:`Option <parse_ebnf.nodes.Option>`
 .. |Group| replace:: :py:class:`Group <parse_ebnf.nodes.Group>`
 .. |Special| replace:: :py:class:`Special <parse_ebnf.nodes.Special>`
-.. |Empty| replace:: :py:class:`Empty <parse_ebnf.nodes.Empty>`
-.. |EmptyTerm| replace:: :py:class:`EmptyTerm <parse_ebnf.nodes.EmptyTerm>`
-
-.. |or| replace:: :ref:`| <groups>`
-.. |maybe| replace:: :ref:`? <optional>`
-.. |any| replace:: :ref:`* <any>`
-.. |more| replace:: :ref:`+ <more>`
+.. |Identifier| replace:: :py:class:`Identifier <parse_ebnf.nodes.Identifier>`
+.. |EmptyString| replace:: :py:class:`EmptyString <parse_ebnf.nodes.EmptyString>`
+.. |Text| replace:: :py:class:`Text <parse_ebnf.nodes.Text>`
+.. |Space| replace:: :py:class:`Space <parse_ebnf.nodes.Space>`
+.. |Literal| replace:: :py:class:`Literal <parse_ebnf.nodes.Literal>`
+.. |Number| replace:: :py:class:`Number <parse_ebnf.nodes.Number>`
 """
 
 # -- Options for HTML output -------------------------------------------------
