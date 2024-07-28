@@ -91,9 +91,9 @@ class PT:
 class EBNFError(Exception):
     pass
 
-def parseFile(ebnf: str) -> PT:
+def parse_file(ebnf: str) -> PT:
     return parsing.parse_pt(open(ebnf).read)
-def parseString(ebnf: str) -> PT:
+def parse_string(ebnf: str) -> PT:
     return parsing.parse_pt(StringIO(ebnf).read)
-def parseFromFunction(read: Callable[[int], str]) -> PT:
+def parse_from_function(read: Callable[[int], str]) -> PT:
     return parsing.parse_pt(read)
