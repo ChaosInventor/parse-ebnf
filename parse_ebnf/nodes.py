@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024-present ChaosInventor <chaosinventor@yandex.com>
+#
+# SPDX-License-Identifier: MIT
+
 class Node:
     """Base class of all PT nodes.
 

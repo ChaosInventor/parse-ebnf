@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024-present ChaosInventor <chaosinventor@yandex.com>
+#
+# SPDX-License-Identifier: MIT
+
 from collections.abc import Callable
 from parse_ebnf import PT, nodes, EBNFError
 
