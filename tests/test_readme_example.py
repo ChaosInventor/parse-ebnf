@@ -5,7 +5,11 @@
 import pytest
 import glob
 
-pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
+pytestmark = pytest.mark.parametrize(
+        "ebnf_path",
+        [p for ps in [glob.glob("tests/resources/valid/*"),
+                      glob.glob("tests/resources/invalid/*")
+                     ] for p in ps])
 
 def test_example(ebnf_path):
     from parse_ebnf import parse_file, EBNFError
