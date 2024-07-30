@@ -11,7 +11,7 @@ class PT:
 
     Contains the following variables:
 
-    - ``root``, the root node of the tree, an instance of :py:class:`Root`;
+    - ``root``, the root node of the tree, an instance of |Root|;
     - ``count``, the number of nodes in the tree;
     - ``height``, the height of the tree;
     - ``maxDegree``, the maximum number of children that a single node has in
@@ -19,43 +19,13 @@ class PT:
 
     And the following functions:
 
-    - ``parse``, use with a read function(a function that works just like the
-      read function for files) to parse an input.
-    - ``unparse``, use with a write function(a function that works just like the
+    - ``unparse``, pass a write function(a function that works just like the
       write function for files) to write the text that the parse tree was
       created from.
     - ``write``, use with a write function to dump a textual representation of
       the parse tree, mainly meant for debugging.
 
-    Example:
-
-    .. code-block:: python
-
-        from parse_ebnf import PT, parsing
-        from io import StringIO
-
-        pt1 = PT()
-        pt2 = PT()
-
-        file = open('your-ebnf-file.ebnf', 'r')
-
-        pt1 = parsing.parse_pt(file.read)
-        with StringIO('rule = term | another term;') as f:
-            pt2 = parsing.parse_pt(f.read)
-
-        #You now have two useable parse trees, pt1 and pt2
-
-        #Print the text that the first child of the root was created from, the
-        #first child will probably be an CommentNode or PTRule.
-        print(repr(pt1.root.children[0]))
-
-        #The height and maxDegree can be used to calculate the worst case size
-        #for:
-        #
-        # - A stack, the worst case size would be the height;
-        # - A queue, the worst case size would be `maxDegree ** height`.
-
-        file.close()
+    For parsing check the :doc:`parsing <parsing>` section.
     """
     root = None
     count = 0
@@ -67,7 +37,7 @@ class PT:
 
         ``write`` is a function that works exactly like write for files - it
         takes in a string and write it to the output. Note that the return value
-        in this case is ignored.
+        is ignored.
         """
         write(str(self.root))
     def write(self, write):
