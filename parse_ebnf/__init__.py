@@ -44,7 +44,7 @@ class PT:
         """Same as `unparse` except that a textual representation meant for
         debugging is written.
         """
-        write(str(self))
+        write(repr(self))
 
     def __init__(self):
         self.root = None
