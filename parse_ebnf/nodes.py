@@ -95,15 +95,11 @@ class Node:
         for child in self:
             ret += str(child)
         return ret
-
-    def _parse_node(self, parser, node):
-        self.add_child(node, parser.pt)
-        return node.parse(parser)
 class Leaf(Node):
     """Base type of all leaf nodes"""
     data = ''
 
-    def __init__(self, start=None, data=''):
+    def __init__(self, data=''):
         super().__init__()
         self.data = data
     def __repr__(self):
@@ -114,7 +110,6 @@ class Primary(Node):
     """ A node holding what a term parses
     TODO:
     """
-    pass
 
 class Root(Node):
     """ The root PT node.
@@ -527,8 +522,6 @@ class Space(Leaf):
 
     ``None``, it is a leaf node, see |Text|.
     """
-    def __init__(self, data=''):
-        super().__init__(None, data)
 class Literal(Leaf):
     """Node holding one or more characters.
 
@@ -546,9 +539,6 @@ class Literal(Leaf):
 
     ``None``, it is a leaf node, see |Text|.
     """
-
-    def __init__(self, data=''):
-        super().__init__(data)
 class Number(Leaf):
     """Holds a number.
     """
