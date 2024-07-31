@@ -6,19 +6,24 @@ class Node:
     """Base class of all PT nodes.
 
     PT nodes differ only in what nodes are their ``parent`` and which nodes
-    are their ``children``, more info at the :doc:`tree structure <tree>`.
-    This node type in particular is not used in the |PT|, it only serves as a
-    base class for all other node types. Using ``isinstance`` you can resolve
-    a node's type.
+    are their ``children``, :ref:`see the reference <concreteNodes>`.
 
-    Contains the following variables:
+    This node type, along with |Leaf| and |Primary|, are not instantiated in the
+    |PT|, they serve as abstract base classes.
 
-    - ``parent`` -- the parent node of this node. It is ``None`` only for
-      |Root|.
-    - ``children`` -- a list of this node's children. Empty only for instance of
-      |Text|.
-    - ``depth`` -- an integer denoting how deep a node is in the tree. The root
-      is defined as being at depth 0, it's children at depth 1, etc.
+    This class in particular is the base for all other node types. The intent is
+    to use ``isinstance`` to resolve a node's exact type.
+
+    All nodes contain the following variables:
+
+    - ``parent`` -- a |Node| instance that acts as the parent for this node. It
+      is ``None`` only for |Root|.
+    - ``children`` -- a list of |Node| instances that act as this node's
+      children. Every node in this list has its ``parent`` set to this node.
+      Empty only for instances of |Text|.
+    - ``depth`` -- an integer denoting how deep this node is in the tree. The
+      root is defined as being at depth 0, it's children at depth 1, their
+      children at depth 2, etc.
     - ``startLine`` -- the line where the text that this node is comprised of
       starts, inclusively. Counting starts from 1, and is incremented each time
       a newline is encountered in the input;
@@ -30,13 +35,14 @@ class Node:
     - ``endColumn`` -- like ``startColumn`` except that this is where the text
       ends, exclusively.
 
-    The following always holds for coordinates:
+    The following statements are always true:
 
     - `startLine` >= 0
     - `endLine` >= 0
     - `startColumn` >= 0
     - `startLine` <= `endLine`
-    - if `startColumn` > `endColumn`: str(node) == '' else: `endColumn` >= 0
+    - if `startColumn` > `endColumn` and `startLine` == `endLine`:
+      str(node) == '' else: `endColumn` >= 0
 
     .. note :: The end coordinates also take into account child nodes. The
        children's text is also counted as the parent's text.
