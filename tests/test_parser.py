@@ -97,8 +97,41 @@ def check_node_structure(node, depth, partial):
     else:
         check_node_children(node, partial, *mod.children)
 
-    if isinstance(node, Terminal):
-        assert node.children[0].data == node.children[2].data
+    if not partial:
+        if isinstance(node, Terminal):
+            assert node.children[0].data == node.children[2].data
+        if isinstance(node, Product):
+            for child in node:
+                if isinstance(child, Identifier): assert node.lhs is child
+                elif isinstance(child, DefinitionList): assert node.rhs is child
+        if isinstance(node, Term):
+            repetition = None
+            primary = None
+            exception = None
+            for child in node:
+                if isinstance(child, Repetition):
+                    assert repetition is None
+                    repetition = child
+                elif isinstance(child, Primary):
+                    assert primary is None
+                    primary = child
+                elif isinstance(child, Exception):
+                    assert exception is None
+                    exception = child
+
+            assert node.repetition is repetition
+            assert node.primary is primary
+            assert node.exception is exception
+        if isinstance(node, Exception):
+            primary = None
+            for child in node:
+                if isinstance(child, Primary):
+                    assert primary is None
+                    primary = child
+
+            assert node.primary is primary
+        if isinstance(node, Repeat) or isinstance(node, Option) or isinstance(node, Group):
+            assert node.children[0] is node.lit
 
     for child in node:
         check_node_structure(child, depth+1, child is node.children[-1] and partial)

@@ -197,7 +197,8 @@ def parse_product(parent: nodes.Node, parser: ParserState) -> nodes.Product:
     product.startLine = parser.line
     product.startColumn = parser.column
 
-    parse_identifier(product, parser)
+    identifer, space = parse_identifier(product, parser)
+    product.lhs = identifer
 
     parse_literal(product, '=', parser)
 
@@ -208,6 +209,7 @@ def parse_product(parent: nodes.Node, parser: ParserState) -> nodes.Product:
 
     if lit is not None:
         raise UnexpectedLiteralError(otherLit, parser)
+    product.rhs = defList
 
     lit = parse_literal(product, PRODUCT_TERMINATOR_SYMBOLS, parser)
 
@@ -353,7 +355,7 @@ def parse_identifier(parent: nodes.Node, parser: ParserState) -> nodes.Identifie
     #checks if there is no trailing white space, and if so skips the trimming
     #step.
     if not hasTrailingWhiteSpace:
-        return identifier
+        return identifier, None
 
     space = nodes.Space()
     parent.add_child(space, parser.pt)
@@ -541,9 +543,9 @@ def parse_exception(parent: nodes.Node, parser: ParserState) -> nodes.Exception:
 
 def parse_primary(parent: nodes.Node, parser: ParserState) -> nodes.Primary:
     if parser.c.isalpha() or parser.c in PRIMARY_START_SYMBOLS:
-
         if parser.c.isalpha():
-            return parse_identifier(parent, parser)
+            identifier, space = parse_identifier(parent, parser)
+            return identifier
         elif parser.c in TERMINAL_START_SYMBOLS:
             return parse_terminal(parent, parser)
         elif parser.c == '{':
@@ -661,11 +663,12 @@ def parse_repeat(parent: nodes.Node, lit: nodes.Literal | None,
     repeat.startColumn = parser.column
 
     if lit is None:
-        parse_literal(repeat, ['{', '(/'], parser)
+        repeat.lit = parse_literal(repeat, ['{', '(/'], parser)
     else:
         repeat.add_child(lit, parser.pt)
         repeat.startLine = lit.startLine
         repeat.startColumn = lit.startColumn
+        repeat.lit = lit
 
     if parser.c.isspace():
         parse_space(repeat, parser)
@@ -694,11 +697,12 @@ def parse_option(parent: nodes.Node, lit: nodes.Literal | None,
     option.startColumn = parser.column
 
     if lit is None:
-        parse_literal(option, ['(:', '['], parser)
+        option.lit = parse_literal(option, ['(:', '['], parser)
     else:
         option.add_child(lit, parser.pt)
         option.startLine = lit.startLine
         option.startColumn = lit.startColumn
+        option.lit = lit
 
     if parser.c.isspace():
         parse_space(option, parser)
@@ -727,11 +731,12 @@ def parse_group(parent: nodes.Node, lit: nodes.Literal| None,
     group.startColumn = parser.column
 
     if lit is None:
-        parse_literal(group, '(', parser)
+        group.lit = parse_literal(group, '(', parser)
     else:
         group.add_child(lit, parser.pt)
         group.startLine = lit.startLine
         group.startColumn = lit.startColumn
+        group.lit = lit
 
     if parser.c.isspace():
         parse_space(group, parser)
