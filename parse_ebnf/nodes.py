@@ -51,6 +51,16 @@ class Node:
 
     def unparse(self, write):
         write(str(self))
+    def write(self, write, depth=0):
+        write(repr(self))
+        if len(self.children) > 0:
+            write(':\n')
+            for child in self:
+                for _ in range(depth):
+                    write('\t')
+                child.write(write, depth+1)
+        else:
+            write('\n')
 
     def add_child(self, node, pt):
         self.children.append(node)
@@ -62,16 +72,6 @@ class Node:
         pt.maxDegree = len(self.children) if len(self.children) > pt.maxDegree else pt.maxDegree
 
         return node
-    def write(self, write, depth=0):
-        write(repr(self))
-        if len(self.children) > 0:
-            write(':\n')
-            for child in self:
-                for _ in range(depth):
-                    write('\t')
-                child.write(write, depth+1)
-        else:
-            write('\n')
 
     def __init__(self, startLine=0, startColumn=0, endLine=0, endColumn=0):
         self.parent = None
