@@ -122,11 +122,13 @@ class Root(Node):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    ``None``
+    .. literalinclude:: /tree_structure/Root.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    (|Product| |or| |Comment| |or| |Space|)\ |any|
+    .. literalinclude:: /tree_structure/Root.py
+        :lines: 5
 
     """
 class Comment(Node):
@@ -140,11 +142,13 @@ class Comment(Node):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Root|
+    .. literalinclude:: /tree_structure/Comment.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``[]``, leaf node, see |Text|.
+    .. literalinclude:: /tree_structure/Comment.py
+        :lines: 5
 
     """
 class Product(Node):
@@ -164,13 +168,13 @@ class Product(Node):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Root|.
+    .. literalinclude:: /tree_structure/Product.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Space|\ |maybe|, |Identifier|, |Space|\ |maybe|,
-    |Literal| = '=', |Space|\ |maybe|, |DefinitionList|,
-    |Space|\ |maybe|, |Literal| = ';' | '.'
+    .. literalinclude:: /tree_structure/Product.py
+        :lines: 5
     """
     lhs = None
     rhs = None
@@ -194,13 +198,13 @@ class DefinitionList(Node):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Product| |or| |Repetition| |or| |Option| |or|
-    |Group|.
+    .. literalinclude:: /tree_structure/DefinitionList.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Space|\ |maybe|, (|Definition|, |Space|\ |maybe|,
-    |Literal| = '|' | '/' | '!')\ |any|, |Space|\ |maybe|.
+    .. literalinclude:: /tree_structure/DefinitionList.py
+        :lines: 5
     """
 class Definition(Node):
     """A node holding a definition.
@@ -210,12 +214,13 @@ class Definition(Node):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |DefinitionList|
+    .. literalinclude:: /tree_structure/Definition.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Space|\ |maybe|, ((|Term| |or| |EmptyTerm|), |Space|\ |maybe|,
-    |Literal| = ',', |Space|\ |maybe|)\ |any|.
+    .. literalinclude:: /tree_structure/Definition.py
+        :lines: 5
 
     """
 class Term(Node):
@@ -245,15 +250,13 @@ class Term(Node):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Definition|
+    .. literalinclude:: /tree_structure/Term.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Space|\ |maybe|, |Repetition|\ |maybe|, |Space|\
-    |maybe|, (|Identifier| |or| |Terminal| |or| |Repeat|
-    |or| |Option| |or| |Special| |or| |Group| |or|
-    |Empty|), (|Space|\ |maybe|, |Literal| = '-',
-    |Exception|)\ |maybe|.
+    .. literalinclude:: /tree_structure/Term.py
+        :lines: 5
 
     """
     repetition = None
@@ -285,13 +288,13 @@ class Exception(Node):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Term|
+    .. literalinclude:: /tree_structure/Exception.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Space|\ |maybe|, (|Identifier| |or| |Terminal| |or|
-    |Repeat| |or| |Option| |or| |Special| |or|
-    |Group| |or| |Empty|).
+    .. literalinclude:: /tree_structure/Exception.py
+        :lines: 5
 
     """
     primary = None
@@ -315,11 +318,13 @@ class Repetition(Node):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Term|
+    .. literalinclude:: /tree_structure/Repetition.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Space|\ |maybe|, |Literal| = '*', |Space|\ |maybe|.
+    .. literalinclude:: /tree_structure/Repetition.py
+        :lines: 5
     """
 
 class Terminal(Primary):
@@ -333,12 +338,13 @@ class Terminal(Primary):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Term| |or| |Exception|.
+    .. literalinclude:: /tree_structure/Terminal.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Literal| = '"' | "'" | '`', |Text|, |Literal| = '"' |
-    "'" | '`'.
+    .. literalinclude:: /tree_structure/Terminal.py
+        :lines: 5
     """
 class Repeat(Primary):
     """ A node holding a repeatable group.
@@ -357,12 +363,13 @@ class Repeat(Primary):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Term| |or| |Exception|
+    .. literalinclude:: /tree_structure/Repeat.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Literal| = '{' | '(/', |DefinitionList|, |Literal| =
-    '}' | '/)'.
+    .. literalinclude:: /tree_structure/Repeat.py
+        :lines: 5
     """
     lit = None
 
@@ -387,12 +394,13 @@ class Option(Primary):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Term| |or| |Exception|
+    .. literalinclude:: /tree_structure/Option.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Literal| = '[' | '(:', |DefinitionList|, |Literal| =
-    ']' | ':)'.
+    .. literalinclude:: /tree_structure/Option.py
+        :lines: 5
     """
     lit = None
 
@@ -413,11 +421,13 @@ class Group(Primary):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Term| |or| |Exception|
+    .. literalinclude:: /tree_structure/Group.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Literal| = '(' |DefinitionList|, |Literal| = ')'.
+    .. literalinclude:: /tree_structure/Group.py
+        :lines: 5
     """
     lit = None
 
@@ -433,11 +443,13 @@ class Special(Primary):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Term| |or| |Exception|.
+    .. literalinclude:: /tree_structure/Special.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    |Literal| = '?', |Text|, |Literal| = '?'.
+    .. literalinclude:: /tree_structure/Special.py
+        :lines: 5
     """
 
 class Identifier(Leaf, Primary):
@@ -449,11 +461,13 @@ class Identifier(Leaf, Primary):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Product| |or| |Term| |or| |Exception|.
+    .. literalinclude:: /tree_structure/Identifier.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``None``, it is a leaf node, see |Text|.
+    .. literalinclude:: /tree_structure/Identifier.py
+        :lines: 5
     """
     def trim(self, parser):
         ret = ''
@@ -510,11 +524,13 @@ class Text(Leaf):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Terminal| |or| |Space|.
+    .. literalinclude:: /tree_structure/Text.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``None`` -- These nodes and their derived classes are always leaf nodes.
+    .. literalinclude:: /tree_structure/Text.py
+        :lines: 5
 
     """
 class Space(Leaf):
@@ -522,11 +538,13 @@ class Space(Leaf):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    ``Any``, just about every node that is not a leaf node holds this node.
+    .. literalinclude:: /tree_structure/Space.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``None``, it is a leaf node, see |Text|.
+    .. literalinclude:: /tree_structure/Space.py
+        :lines: 5
     """
 class Literal(Leaf):
     """Node holding one or more characters.
@@ -536,14 +554,13 @@ class Literal(Leaf):
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
-    |Product| |or| |DefinitionList| |or| |Definition| |or|
-    |Term| |or| |Exception| |or| |Repetition| |or|
-    |Terminal| |or| |Repeat| |or| |Option| |or|
-    |Group| |or| |Space|.
+    .. literalinclude:: /tree_structure/Literal.py
+        :lines: 4
 
     .. rubric:: :ref:`Children <childrenEntry>`
 
-    ``None``, it is a leaf node, see |Text|.
+    .. literalinclude:: /tree_structure/Literal.py
+        :lines: 5
     """
 class Number(Leaf):
     """Holds a number.
