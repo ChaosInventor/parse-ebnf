@@ -30,7 +30,7 @@ The documented tree structure and tested tree structure are kept in sync via the
 type has its own file describing its possible parent and children node types
 along with their order and count.
 
-Each file under ``tests/tree_structure`` is named after the node is describes
+Each file under ``tests/tree_structure`` is named after the node it describes
 with an added ``.py`` suffix. For example, the |Comment| node's structure is
 described in ``tests/tree_structure/Comment.py``.
 
