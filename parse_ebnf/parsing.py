@@ -76,6 +76,7 @@ class ParserState:
                 f'column={self.column}, pt={repr(self.pt)}')
 
 def parse_pt(read: Callable[[int], str]) -> PT:
+    """The same as :py:func:`parse_ebnf.parse_from_function`."""
     pt = PT()
 
     parser = ParserState(read, pt)
