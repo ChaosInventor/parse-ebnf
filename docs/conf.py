@@ -47,6 +47,16 @@ rst_prolog = """
 .. |Space| replace:: :py:class:`Space <parse_ebnf.nodes.Space>`
 .. |Literal| replace:: :py:class:`Literal <parse_ebnf.nodes.Literal>`
 .. |Number| replace:: :py:class:`Number <parse_ebnf.nodes.Number>`
+.. |ParsingError| replace:: :py:class:`ParsingError <parse_ebnf.parsing.ParsingError>`
+.. |EOFError| replace:: :py:class:`EOFError <parse_ebnf.parsing.EOFError>`
+.. |UnexpectedCharacterError| replace:: :py:class:`UnexpectedCharacterError <parse_ebnf.parsing.UnexpectedCharacterError>`
+.. |NoSpaceError| replace:: :py:class:`NoSpaceError <parse_ebnf.parsing.NoSpaceError>`
+.. |NoLiteralError| replace:: :py:class:`NoLiteralError <parse_ebnf.parsing.NoLiteralError>`
+.. |UndelimitedTermError| replace:: :py:class:`UndelimitedTermError <parse_ebnf.parsing.UndelimitedTermError>`
+.. |MultipleTermRepetitions| replace:: :py:class:`MultipleTermRepetitions <parse_ebnf.parsing.MultipleTermRepetitions>`
+.. |MultipleTermExceptions| replace:: :py:class:`MultipleTermExceptions <parse_ebnf.parsing.MultipleTermExceptions>`
+.. |MultipleTermPrimariesError| replace:: :py:class:`MultipleTermPrimariesError <parse_ebnf.parsing.MultipleTermPrimariesError>`
+.. |UnexpectedLiteralError| replace:: :py:class:`UnexpectedLiteralError <parse_ebnf.parsing.UnexpectedLiteralError>`
 """
 
 # -- Options for HTML output -------------------------------------------------

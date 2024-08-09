@@ -78,6 +78,7 @@ Reference
 
     Parsing <parsing.rst>
     Parse tree <tree.rst>
+    Errors <errors.rst>
     Testing <testing.rst>
 
 Indices and tables
