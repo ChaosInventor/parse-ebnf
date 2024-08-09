@@ -27,13 +27,14 @@ pip install parse-ebnf
 ## Quick start
 
 ```python
-from parse_ebnf import parse_file, EBNFError
+from parse_ebnf import parse_file
+from parse_ebnf.parsing import ParsingError
 
 try:
     #Your EBNF file goes here.
     pt = parse_file(ebnf_path)
     partial = False
-except EBNFError as e:
+except ParsingError as e:
     #If an exception occurs, a partial tree is generated. See the docs for
     #details.
     pt = e.parser.pt
