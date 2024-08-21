@@ -1,3 +1,6 @@
+.. _errors:
+.. index:: errors
+
 Errors
 ======
 
