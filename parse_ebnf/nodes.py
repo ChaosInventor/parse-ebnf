@@ -20,7 +20,7 @@ class Node:
       is ``None`` only for |Root|.
     - ``children`` -- a list of |Node| instances that act as this node's
       children. Every node in this list has its ``parent`` set to this node.
-      Empty only for instances of |Text|.
+      Empty only for instances of |Leaf|.
     - ``depth`` -- an integer denoting how deep this node is in the tree. The
       root is defined as being at depth 0, it's children at depth 1, their
       children at depth 2, etc.
@@ -102,7 +102,18 @@ class Node:
             ret += str(child)
         return ret
 class Leaf(Node):
-    """Base type of all leaf nodes"""
+    """Base class of all leaf nodes.
+
+    This node is a base class for all leaf nodes, nodes whose ``children`` list
+    is empty.
+
+    .. note:: Only leafs nodes contain text data in the tree.
+
+    This node has the following variables:
+
+    - Variables inherited from |Node|;
+    - ``data`` -- the text content of the node, a string.
+    """
     data = ''
 
     def __init__(self, data=''):
@@ -113,12 +124,24 @@ class Leaf(Node):
     def __str__(self):
         return self.data
 class Primary(Node):
-    """ A node holding what a term parses
-    TODO:
+    """A node holding what a term parses.
+
+    This class is mainly meant to tag other nodes that may be primaries for a
+    |Term|.
+
+    The current list of primaries is:
+
+    - |Terminal|;
+    - |Repeat|;
+    - |Option|;
+    - |Group|;
+    - |Special|;
+    - |Identifier|;
+    - |EmptyString|.
     """
 
 class Root(Node):
-    """ The root PT node.
+    """The root PT node.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
@@ -136,10 +159,6 @@ class Comment(Node):
 
     Comments in EBNF are enclosed by ``(*``, ``*)`` pairs. Nesting is allowed.
 
-    The ``data`` string does **NOT** contain the enclosing comment markers.
-    Nested comment markers are included however. ``repr`` returns a proper
-    comment string.
-
     .. rubric:: :ref:`Parent type <parentEntry>`
 
     .. literalinclude:: /tree_structure/Comment.py
@@ -152,7 +171,7 @@ class Comment(Node):
 
     """
 class Product(Node):
-    """ A node holding a product.
+    """A node holding a product.
 
     A product is a grammar rule, those of the form:
 
@@ -190,7 +209,7 @@ class Product(Node):
             self.rhs = rhs
             self.add_child(rhs, pt)
 class DefinitionList(Node):
-    """ Node containing a list of definitions.
+    """Node containing a list of definitions.
 
     Definitions are the lists of concatenations. Definitions are placed
     in-between alterations symbols. This node can be seen as holding all
@@ -224,7 +243,7 @@ class Definition(Node):
 
     """
 class Term(Node):
-    """ Node holding a single term.
+    """Node holding a single term.
 
     Terms are values that a rule can take, they may be either:
 
@@ -235,16 +254,9 @@ class Term(Node):
     This node has the following variables:
 
     - Those inherited from |Node|;
-    - ``repetition`` -- an |Repetition|, the one in the children list;
-    - ``primary`` -- the term that this node is defined as, the one in the
-      children list, may either be:
-
-        - |Terminal|;
-        - |Identifier|;
-        - |Group|;
-        - |Repeat|;
-        - |Option|;
-        - |Special|.
+    - ``repetition`` -- a |Repetition|, the one in the children list;
+    - ``primary`` -- what is to be parsed, the one in the children list, always
+      an instance of |Primary|.
 
     - ``exception`` -- an |Exception|, the one in the children list.
 
@@ -280,11 +292,17 @@ class Term(Node):
         if exception != None:
             self.add_child(exception)
 class Exception(Node):
-    """ A node holding the exception to a term.
+    """A node holding the exception to a term.
 
     Exceptions are written after a term's primary, prefixed with a ``-``.
     They're terms themselves, except that they don't have exceptions and
     repetitions.
+
+    This node has the following variables:
+
+    - Those inherited from |Node|;
+    - ``primary`` -- what is to be excluded from parsing, the one in the
+      children list, always an instance of |Primary|.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
@@ -310,11 +328,6 @@ class Exception(Node):
             self.add_child(primary, pt)
 class Repetition(Node):
     """A node holding how many times at most a term may be repeated.
-
-    This node has the following variables:
-
-    - Those inherited from |Node|;
-    - ``count`` -- an integer denoting the repetition count.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
@@ -347,7 +360,7 @@ class Terminal(Primary):
         :lines: 5
     """
 class Repeat(Primary):
-    """ A node holding a repeatable group.
+    """A node holding a repeatable group.
 
     A group enclosed by either:
 
@@ -378,7 +391,7 @@ class Repeat(Primary):
         super().__init__()
         self.lit = lit
 class Option(Primary):
-    """ A node holding an optional group.
+    """A node holding an optional group.
 
     A group enclosed by either:
 
@@ -409,7 +422,7 @@ class Option(Primary):
         super().__init__()
         self.lit = lit
 class Group(Primary):
-    """ A node holding a group.
+    """A node holding a group.
 
     A group enclosed by ``(`` and ``)`` can be used to make what are essentially
     inline non-terminals.
@@ -436,10 +449,10 @@ class Group(Primary):
         super().__init__()
         self.lit = lit
 class Special(Primary):
-    """ A node holding a special sequence.
+    """A node holding a special sequence.
 
     A sequence of text enclosed by ``?`` is considered a special sequence. The
-    EBNF spec leaves this as room for defining extension to the language.
+    EBNF spec leaves this as room for defining extensions to the language.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
@@ -507,20 +520,26 @@ class Identifier(Leaf, Primary):
         else:
             return None
 class EmptyString(Leaf, Primary):
-    """A node that holds nothing."""
+    """A node that represents the empty string.
+
+    EBNF does not have a symbol for the empty string, instead it is represented
+    by another empty string.
+
+    The ``data`` instance variable is always an empty string.
+
+    .. rubric:: :ref:`Parent type <parentEntry>`
+
+    .. literalinclude:: /tree_structure/EmptyString.py
+        :lines: 4
+
+    .. rubric:: :ref:`Children <childrenEntry>`
+
+    .. literalinclude:: /tree_structure/EmptyString.py
+        :lines: 5
+    """
 
 class Text(Leaf):
-    """ Base class for leaf nodes.
-
-    This node is a base class for all leaf nodes, nodes whose ``children`` list
-    is empty.
-
-    .. note:: Only leafs nodes contain text data in the tree.
-
-    This node has the following variables:
-
-    - Variables inherited from |Node|;
-    - ``data`` -- the text content of the node, a string.
+    """Node holding text.
 
     .. rubric:: :ref:`Parent type <parentEntry>`
 
@@ -563,7 +582,10 @@ class Literal(Leaf):
         :lines: 5
     """
 class Number(Leaf):
-    """Holds a number.
+    """Node holding a positive integer.
+
+    The number is stored as a string in the ``data`` variable. Use the instance
+    function ``to_int`` to convert it to an integer.
     """
     def to_int():
         return int(data)
