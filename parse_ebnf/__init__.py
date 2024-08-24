@@ -59,6 +59,7 @@ class PT:
         return f'PT{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{repr(self.root)}'
 
 class EBNFError(Exception):
+    """Base class of all parse_ebnf errors. Does not define anything."""
     pass
 
 def parse_file(ebnf: str) -> PT:

@@ -11,28 +11,19 @@ TERMINAL_START_SYMBOLS = ['"', "'", "`"]
 PRIMARY_START_SYMBOLS = ['(', '[', '{', '?', *TERMINAL_START_SYMBOLS]
 
 class ParserState:
-    """A helper class for parsing, not meant to be used externally.
+    """A helper class for parsing, not meant to be used externally, only read.
 
-    Keeps track of the current line and column, `line` and `column`
-    respectively, as well as the currently read string, `c`. It also has a
-    reference to the PT it belongs, `pt`, and to the read function `readFunc`
+    Keeps track of the current line and column, ``line`` and ``column``
+    respectively, as well as the currently read string, ``c``. It also has a
+    reference to the PT it is parsing, ``pt``, and to the read function
+    ``readFunc``.
 
-    Has lists containing constant characters that are used as terminals those
-    being:
+    Has two helper functions for reading input:
 
-     - `DEFINITION_SEPARATORS`
-     - `PRODUCT_TERMINATOR_SYMBOLS`
-     - `TERMINAL_START_SYMBOLS`
-     - `TERM_START_SYMBOLS`
-     - `BRACKET_START_SYMBOLS`
-     - `BRACKET_END_SYMBOLS`
+     - ``read``
+     - ``read_no_eof``
 
-    Finally has two helper functions for reading input:
-
-     - `read`
-     - `read_no_eof`
-
-    They help by maintaining `line`, `column` and `c`.
+    They help by maintaining ``line``, ``column`` and ``c``.
     """
     pt = None
     readFunc = None
@@ -795,11 +786,19 @@ def parse_empty_string(parent: nodes.Node, parser: ParserState) -> nodes.EmptySt
 
 
 class ParsingError(EBNFError):
+    """Base class of all parsing related errors.
+
+    Each instance of this class has a variable named ``parser`` that represents
+    the :py:class:`parsing state <parse_ebnf.parsing.ParserState>` at the time
+    the error occurred. With that you can get both the line and column of the
+    error along with the :ref:`partial parse tree <partial>`.
+    """
     def __init__(self, message, parser: ParserState):
         super().__init__(message)
         self.parser = parser
 
 class EOFError(ParsingError):
+    """An end of file was reached in an unexpected place."""
     def __init__(self, parser: ParserState, reason: str | None = None):
         if reason is None:
             super().__init__(f'Did not expect EOF at {parser.line},'
@@ -811,6 +810,10 @@ class EOFError(ParsingError):
                              )
 
 class UnexpectedCharacterError(ParsingError):
+    """An unexpected character occurred during parsing.
+
+    The unexpected character can be found in ``parser.c``.
+    """
     def __init__(self, parser: ParserState, expected: str | None=None):
         if expected is None:
             super().__init__(f'Did not expect character `{parser.c}` at '
@@ -822,6 +825,7 @@ class UnexpectedCharacterError(ParsingError):
                              )
 
 class NoSpaceError(ParsingError):
+    """Expected a space character at the current line and column."""
     def __init__(self, parser: ParserState):
         super().__init__(f'Expected a space character at '
                          f'{parser.line},{parser.column}, but found '
@@ -829,22 +833,38 @@ class NoSpaceError(ParsingError):
                          )
 
 class NoLiteralError(ParsingError):
+    """Could not match a literal.
+
+    The expected literal or literals can be found in the instance variable
+    ``literals`` that may be a string or list of strings. The instance variable
+    ``read`` contains the characters that were read whilst matching the given
+    literal.
+    """
     def __init__(self, parser: ParserState, literals: list | str, read: str):
-        super().__init__(f'Could not find match {literals} at '
+        super().__init__(f'Could not match {literals} at '
                          f'{parser.line},{parser.column}', parser
                          )
         self.literals = literals
         self.read = read
 
 class UndelimitedTermError(ParsingError):
+    """The previous |Term| was not delimited with a comma.
+
+    The previous term can be found in the instance variable ``term``.
+    """
     def __init__(self, term: nodes.Term, parser: ParserState):
         super().__init__(f'Start of another term at '
                          f'{parser.line},{parser.column} before previous term '
                          f'at {term.startLine},{term.startColumn} terminated',
                          parser
                          )
+        self.term = term
 
 class MultipleTermRepetitions(ParsingError):
+    """Multiple |Repetition| nodes were parsed for a single |Term|
+
+    The term in question can be found in the instance variable ``term``.
+    """
     def __init__(self, term: nodes.Term, parser: ParserState):
         super().__init__(f'Term can only have one repetition, another defined '
                          f'at {parser.line},{parser.column}, last one defined '
@@ -852,8 +872,13 @@ class MultipleTermRepetitions(ParsingError):
                          f'{term.repetition.startColumn}',
                          parser
                          )
+        self.term = term
 
 class MultipleTermExceptions(ParsingError):
+    """Multiple |Exception| nodes were parsed for a single |Term|
+
+    The term in question can be found in the instance variable ``term``.
+    """
     def __init__(self, term: nodes.Term, parser: ParserState):
         super().__init__(f'Unexpected `-`, term started at '
                          f'{term.startLine},{term.startColumn} already has an '
@@ -862,17 +887,28 @@ class MultipleTermExceptions(ParsingError):
                          f'{term.exception.startColumn}',
                          parser
                          )
+        self.term = term
 
 class MultipleTermPrimariesError(ParsingError):
+    """Multiple |Primary| nodes were parsed for a single |Term|
+
+    The term in question can be found in the instance variable ``term``.
+    """
     def __init__(self, term: nodes.Term, parser: ParserState):
         super().__init__(f'Term started at {term.startLine},{term.startColumn} '
                          f'can only have one primary, however another defined '
                          f'at {parser.line},{parser.column}',
                          parser
                          )
+        self.term = term
 
 class UnexpectedLiteralError(ParsingError):
+    """Did not expect to parser a literal.
+
+    The literal in question can be found in the instance variable ``literal``.
+    """
     def __init__(self, lit: nodes.Literal, parser: ParserState):
             super().__init__(f'Did not expect literal `{lit.data}` at '
                              f'{lit.startLine},{lit.startColumn}', parser
                              )
+            self.literal = lit
