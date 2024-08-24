@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Callable
-from parse_ebnf import PT, nodes, EBNFError
+
+from parse_ebnf import PT, EBNFError, nodes
 
 DEFINITION_SEPARATORS = ['|', '/', '!']
 PRODUCT_TERMINATOR_SYMBOLS = [';', '.']
@@ -63,8 +64,8 @@ class ParserState:
         self.column = 0
         self.read(1)
     def __repr__(self):
-        return (f'read={repr(self.readFunc)}, c={self.c}, line={self.line}, '
-                f'column={self.column}, pt={repr(self.pt)}')
+        return (f'read={self.readFunc!r}, c={self.c}, line={self.line}, '
+                f'column={self.column}, pt={self.pt!r}')
 
 def parse_pt(read: Callable[[int], str]) -> PT:
     """The same as :py:func:`parse_ebnf.parse_from_function`."""
@@ -435,20 +436,20 @@ def parse_definition(parent: nodes.Node, parser: ParserState) -> nodes.Definitio
         if parser.c.isspace():
             parse_space(definition, parser)
         elif parser.c.isalpha() or parser.c.isnumeric() or parser.c in PRIMARY_START_SYMBOLS:
-            if term != None:
+            if term is not None:
                 raise UndelimitedTermError(term, parser)
             term = parse_term(definition, parser)
         elif parser.c == ',':
-            if term == None:
+            if term is None:
                 parse_empty_term(definition, parser)
 
             parse_literal(definition, ',', parser)
             term = None
         else:
             #Let the parent handle it
-            break;
+            break
 
-    if term == None:
+    if term is None:
         parse_empty_term(definition, parser)
     definition.endLine = parser.line
     definition.endColumn = parser.column - 1
@@ -466,18 +467,18 @@ def parse_term(parent: nodes.Node, parser: ParserState) -> nodes.Term:
         if parser.c.isspace():
             parse_space(term, parser)
         elif parser.c.isnumeric():
-            if term.repetition != None:
+            if term.repetition is not None:
                 raise MultipleTermRepetitions(term, parser)
 
             term.repetition = parse_repetition(term, parser)
         elif parser.c == '-':
-            if term.exception != None:
+            if term.exception is not None:
                 raise MultipleTermExceptions(term, parser)
 
             parse_literal(term, '-', parser)
             term.exception = parse_exception(term, parser)
         elif parser.c.isalpha() or parser.c in PRIMARY_START_SYMBOLS:
-            if term.primary != None:
+            if term.primary is not None:
                 raise MultipleTermPrimariesError(term, parser)
 
             term.primary = parse_primary(term, parser)
@@ -485,7 +486,7 @@ def parse_term(parent: nodes.Node, parser: ParserState) -> nodes.Term:
             #Let the parent handle it
             break
 
-    if term.primary == None:
+    if term.primary is None:
         term.primary = parse_empty_string(term, parser)
 
     term.endLine = term.children[-1].endLine
@@ -526,7 +527,7 @@ def parse_exception(parent: nodes.Node, parser: ParserState) -> nodes.Exception:
             #Let the parent handle it
             break
 
-    if exception.primary == None:
+    if exception.primary is None:
         exception.primary = parse_empty_string(exception, parser)
 
     exception.endLine = exception.children[-1].endLine
@@ -612,7 +613,7 @@ def parse_empty_term(parent: nodes.Node, parser: ParserState) -> nodes.Term:
     return term
 
 def parse_terminal(parent: nodes.Node, parser: ParserState) -> nodes.Terminal:
-    if not parser.c in TERMINAL_START_SYMBOLS:
+    if parser.c not in TERMINAL_START_SYMBOLS:
         raise UnexpectedCharacterError(parser,
                                        f'one of '
                                        f'{TERMINAL_START_SYMBOLS}'

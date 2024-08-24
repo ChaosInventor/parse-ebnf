@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 import glob
+
+import pytest
 
 pytestmark = pytest.mark.parametrize(
         "ebnf_path",

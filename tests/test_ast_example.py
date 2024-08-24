@@ -2,19 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 import glob
+
+import pytest
 
 pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
 
 def test_example_ast(ebnf_path):
-    from parse_ebnf import PT, parsing
     from io import StringIO
+
+    from parse_ebnf import PT, parsing
 
     pt1 = PT()
     pt2 = PT()
 
-    file = open(ebnf_path, 'r')
+    file = open(ebnf_path)
 
     pt1 = parsing.parse_pt(file.read)
     with StringIO('rule = term | another term;') as f:

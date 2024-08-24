@@ -200,12 +200,12 @@ class Product(Node):
 
     def __init__(self, lhs=None, rhs=None, pt=None):
         super().__init__()
-        if lhs != None or rhs != None:
-            assert isinstance(pt, PT), f"Expected an abstract syntax tree, not a {pt.__class__}"
-        if lhs != None:
+        if lhs is not None or rhs is not None:
+            assert isinstance(pt, parse_ebnf.PT), f"Expected an abstract syntax tree, not a {pt.__class__}"
+        if lhs is not None:
             self.lhs = lhs
             self.add_child(lhs, pt)
-        if rhs != None:
+        if rhs is not None:
             self.rhs = rhs
             self.add_child(rhs, pt)
 class DefinitionList(Node):
@@ -276,20 +276,20 @@ class Term(Node):
     exception = None
 
     def __init__(self, pt=None, repetition=None, primary=None, exception=None):
-        assert repetition == None or isinstance(repetition, Repetition), f"Repetition must be either None or an int, got {repetition}"
-        assert isinstance(primary, Node) or primary == None, "A term must have a primary"
-        assert isinstance(exception, Term) or exception == None, "Exception must be another term"
-        if primary != None or exception != None:
-            assert isinstance(pt, PT), "Expected an abstract syntax tree"
+        assert repetition is None or isinstance(repetition, Repetition), f"Repetition must be either None or an int, got {repetition}"
+        assert isinstance(primary, Node) or primary is None, "A term must have a primary"
+        assert isinstance(exception, Term) or exception is None, "Exception must be another term"
+        if primary is not None or exception is not None:
+            assert isinstance(pt, parse_ebnf.PT), "Expected an abstract syntax tree"
 
         super().__init__()
         self.repetition = repetition
         self.primary = primary
-        if primary != None:
+        if primary is not None:
             self.add_child(primary, pt)
 
         self.exception = exception
-        if exception != None:
+        if exception is not None:
             self.add_child(exception)
 class Exception(Node):
     """A node holding the exception to a term.
@@ -318,13 +318,13 @@ class Exception(Node):
     primary = None
 
     def __init__(self, pt=None, primary=None):
-        assert isinstance(primary, Node) or primary == None, "A term must have a primary"
-        if primary != None:
-            assert isinstance(pt, PT), "Expected an abstract syntax tree"
+        assert isinstance(primary, Node) or primary is None, "A term must have a primary"
+        if primary is not None:
+            assert isinstance(pt, parse_ebnf.PT), "Expected an abstract syntax tree"
 
         super().__init__()
         self.primary = primary
-        if primary != None:
+        if primary is not None:
             self.add_child(primary, pt)
 class Repetition(Node):
     """A node holding how many times at most a term may be repeated.
@@ -341,7 +341,7 @@ class Repetition(Node):
     """
 
 class Terminal(Primary):
-    """A node holding a terminal.
+    r"""A node holding a terminal.
 
     Terminals are sequences of characters that are enclosed by either:
 
@@ -387,7 +387,7 @@ class Repeat(Primary):
     lit = None
 
     def __init__(self, lit=None):
-        assert isinstance(lit, Literal) or lit == None
+        assert isinstance(lit, Literal) or lit is None
         super().__init__()
         self.lit = lit
 class Option(Primary):
@@ -418,7 +418,7 @@ class Option(Primary):
     lit = None
 
     def __init__(self, lit=None):
-        assert isinstance(lit, Literal) or lit == None
+        assert isinstance(lit, Literal) or lit is None
         super().__init__()
         self.lit = lit
 class Group(Primary):
@@ -445,7 +445,7 @@ class Group(Primary):
     lit = None
 
     def __init__(self, lit=None):
-        assert isinstance(lit, Literal) or lit == None
+        assert isinstance(lit, Literal) or lit is None
         super().__init__()
         self.lit = lit
 class Special(Primary):
@@ -482,7 +482,7 @@ class Identifier(Leaf, Primary):
     .. literalinclude:: /tree_structure/Identifier.py
         :lines: 5
     """
-    def trim(self, parser):
+    def trim(self):
         ret = ''
         while len(self.data) > 0:
             if self.data[-1].isspace():
@@ -588,4 +588,4 @@ class Number(Leaf):
     function ``to_int`` to convert it to an integer.
     """
     def to_int():
-        return int(data)
+        return int(self.data)

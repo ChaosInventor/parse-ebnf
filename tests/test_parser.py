@@ -2,12 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 import glob
 import io
-from parse_ebnf import PT, parsing, EBNFError
-from parse_ebnf.nodes import *
 from importlib import import_module
+
+import pytest
+
+from parse_ebnf import PT, EBNFError, parsing
+from parse_ebnf.nodes import *
 from tests.tree_structure import check_node_children, parent_is_either
 
 pytestmark = pytest.mark.parametrize(
@@ -18,7 +20,7 @@ pytestmark = pytest.mark.parametrize(
 
 @pytest.fixture
 def ebnf(ebnf_path):
-    ebnf = open(ebnf_path, 'r')
+    ebnf = open(ebnf_path)
 
     pt = PT()
     partial = False
@@ -130,7 +132,7 @@ def check_node_structure(node, depth, partial):
                     primary = child
 
             assert node.primary is primary
-        if isinstance(node, Repeat) or isinstance(node, Option) or isinstance(node, Group):
+        if isinstance(node, (Group, Option, Repeat)):
             assert node.children[0] is node.lit
 
     for child in node:

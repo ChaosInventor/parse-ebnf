@@ -1,5 +1,6 @@
 import inspect
 import re
+
 import parse_ebnf.nodes
 
 #TODO: Perfect tree by not allowing the last or first node to ever be a

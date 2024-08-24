@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from parse_ebnf import nodes
-from io import StringIO
 from collections.abc import Callable
+from io import StringIO
+
 
 class PT:
     """A parse tree for EBNF.
@@ -56,15 +56,15 @@ class PT:
         return str(self.root)
     def __repr__(self):
         """Returns a textual representation of this tree meant for debugging."""
-        return f'PT{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{repr(self.root)}'
+        return f'PT{{count = {self.count}, height = {self.height}, maxDegree={self.maxDegree}}}:\n{self.root!r}'
 
 class EBNFError(Exception):
     """Base class of all parse_ebnf errors. Does not define anything."""
-    pass
 
 def parse_file(ebnf: str) -> PT:
     """Parse the file named `ebnf`."""
-    return parsing.parse_pt(open(ebnf).read)
+    with open(ebnf) as file:
+        return parsing.parse_pt(file.read)
 def parse_string(ebnf: str) -> PT:
     """Parse the EBNF string `ebnf`."""
     return parsing.parse_pt(StringIO(ebnf).read)
