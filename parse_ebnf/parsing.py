@@ -816,14 +816,6 @@ class UnexpectedCharacterError(ParsingError):
                              f'{parser.line},{parser.column}, {expected}', parser
                              )
 
-class NoSpaceError(ParsingError):
-    """Expected a space character at the current line and column."""
-    def __init__(self, parser: ParserState):
-        super().__init__(f'Expected a space character at '
-                         f'{parser.line},{parser.column}, but found '
-                         f'`{parser.c}`', parser
-                         )
-
 class NoLiteralError(ParsingError):
     """Could not match a literal.
 

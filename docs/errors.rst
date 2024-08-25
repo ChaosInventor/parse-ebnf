@@ -17,7 +17,6 @@ Parsing errors reference
 
 .. autoclass:: parse_ebnf.parsing.EOFError
 .. autoclass:: parse_ebnf.parsing.UnexpectedCharacterError
-.. autoclass:: parse_ebnf.parsing.NoSpaceError
 .. autoclass:: parse_ebnf.parsing.NoLiteralError
 .. autoclass:: parse_ebnf.parsing.UndelimitedTermError
 .. autoclass:: parse_ebnf.parsing.MultipleTermRepetitions
