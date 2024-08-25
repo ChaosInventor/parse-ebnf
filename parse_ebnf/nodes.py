@@ -59,14 +59,6 @@ class Node:
         write(str(self))
     def write(self, write, depth=0):
         write(repr(self))
-        if len(self.children) > 0:
-            write(':\n')
-            for child in self:
-                for _ in range(depth):
-                    write('\t')
-                child.write(write, depth+1)
-        else:
-            write('\n')
 
     def add_child(self, node, pt):
         self.children.append(node)

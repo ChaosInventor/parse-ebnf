@@ -211,3 +211,32 @@ def test_pt_coordinates(ebnf):
 
     check_node_coordinates(pt.root, file, partial)
 
+def test_pt_node_write(ebnf):
+    pt, file, path, partial = ebnf
+
+    ptBuffer = io.StringIO()
+    nodeBuffer = io.StringIO()
+
+    pt.write(ptBuffer.write)
+    pt.root.write(nodeBuffer.write)
+
+    ptBuffer.seek(0)
+    nodeBuffer.seek(0)
+
+    ptBuffer.readline()
+    assert ptBuffer.read() == nodeBuffer.read()
+
+def test_pt_node_unparse(ebnf):
+    pt, file, path, partial = ebnf
+
+    ptBuffer = io.StringIO()
+    nodeBuffer = io.StringIO()
+
+    pt.unparse(ptBuffer.write)
+    pt.root.unparse(nodeBuffer.write)
+
+    ptBuffer.seek(0)
+    nodeBuffer.seek(0)
+
+    assert ptBuffer.read() == nodeBuffer.read()
+
