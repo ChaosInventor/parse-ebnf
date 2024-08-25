@@ -181,8 +181,7 @@ def parse_comment(parent: nodes.Node, parser: ParserState,
     return comment
 
 def parse_product(parent: nodes.Node, parser: ParserState) -> nodes.Product:
-    if not parser.c.isalpha():
-        raise UnexpectedCharacterError(parser, 'expected a letter')
+    assert parser.c.isalpha()
 
     product = nodes.Product()
     parent.add_child(product, parser.pt)
@@ -215,8 +214,7 @@ def parse_space(parent: nodes.Node, parser: ParserState) -> nodes.Space:
     space = nodes.Space()
     parent.add_child(space, parser.pt)
 
-    if not parser.c.isspace():
-        raise NoSpaceError(parser)
+    assert parser.c.isspace()
 
     space.startLine = parser.line
     space.startColumn = parser.column
@@ -302,8 +300,7 @@ def parse_literal(parent: nodes.Node, literals: str | list,
     return literal
 
 def parse_identifier(parent: nodes.Node, parser: ParserState) -> nodes.Identifier:
-    if not parser.c.isalpha():
-        raise UnexpectedCharacterError(parser, 'expected a letter')
+    assert parser.c.isalpha()
 
     identifier = nodes.Identifier()
     parent.add_child(identifier, parser.pt)
@@ -535,49 +532,48 @@ def parse_exception(parent: nodes.Node, parser: ParserState) -> nodes.Exception:
     return exception
 
 def parse_primary(parent: nodes.Node, parser: ParserState) -> nodes.Primary:
-    if parser.c.isalpha() or parser.c in PRIMARY_START_SYMBOLS:
-        if parser.c.isalpha():
-            identifier, space = parse_identifier(parent, parser)
-            return identifier
-        elif parser.c in TERMINAL_START_SYMBOLS:
-            return parse_terminal(parent, parser)
-        elif parser.c == '{':
-            return parse_repeat(parent, None, parser)
-        elif parser.c == '[':
-            return parse_option(parent, None, parser)
-        elif parser.c == '(':
-            lit = nodes.Literal()
+    assert parser.c.isalpha() or parser.c in PRIMARY_START_SYMBOLS
 
-            lit.startLine = parser.line
-            lit.startColumn = parser.column
-            lit.endLine = parser.line
+    if parser.c.isalpha():
+        identifier, space = parse_identifier(parent, parser)
+        return identifier
+    elif parser.c in TERMINAL_START_SYMBOLS:
+        return parse_terminal(parent, parser)
+    elif parser.c == '{':
+        return parse_repeat(parent, None, parser)
+    elif parser.c == '[':
+        return parse_option(parent, None, parser)
+    elif parser.c == '(':
+        lit = nodes.Literal()
+
+        lit.startLine = parser.line
+        lit.startColumn = parser.column
+        lit.endLine = parser.line
+        lit.endColumn = parser.column
+
+        lit.data += '('
+
+        parser.read_no_eof(1, 'reading primary')
+
+        if parser.c in ['/', ':']:
+            lit.data += parser.c
             lit.endColumn = parser.column
 
-            lit.data += '('
+            oc = parser.c
+            parser.read(1)
 
-            parser.read_no_eof(1, 'reading primary')
-
-            if parser.c in ['/', ':']:
-                lit.data += parser.c
-                lit.endColumn = parser.column
-
-                oc = parser.c
-                parser.read(1)
-
-                if oc == '/':
-                    return parse_repeat(parent, lit, parser)
-                elif oc == ':':
-                    return parse_option(parent, lit, parser)
-                else:
-                    raise ParsingError('Bug! Unreachable', parser)
+            if oc == '/':
+                return parse_repeat(parent, lit, parser)
+            elif oc == ':':
+                return parse_option(parent, lit, parser)
             else:
-                return parse_group(parent, lit, parser)
-        elif parser.c == '?':
-            return parse_special(parent, parser)
+                assert False, 'Bug! Unreachable'
         else:
-            raise ParsingError('Bug! Unreachable', parser)
+            return parse_group(parent, lit, parser)
+    elif parser.c == '?':
+        return parse_special(parent, parser)
     else:
-        raise UnexpectedCharacterError(parser, f'expected a letter or one of {PRIMARY_START_SYMBOLS}')
+        assert False, 'Bug! Unreachable'
 
 def parse_number(parent: nodes.Node, parser: ParserState) -> nodes.Number:
     number = nodes.Number()
@@ -586,8 +582,7 @@ def parse_number(parent: nodes.Node, parser: ParserState) -> nodes.Number:
     number.startLine = parser.line
     number.startColumn = parser.column
 
-    if not parser.c.isnumeric():
-        raise UnexpectedCharacterError(parser, 'expected a number')
+    assert parser.c.isnumeric()
 
     number.data += parser.c
     number.endLine = parser.line
@@ -613,11 +608,7 @@ def parse_empty_term(parent: nodes.Node, parser: ParserState) -> nodes.Term:
     return term
 
 def parse_terminal(parent: nodes.Node, parser: ParserState) -> nodes.Terminal:
-    if parser.c not in TERMINAL_START_SYMBOLS:
-        raise UnexpectedCharacterError(parser,
-                                       f'one of '
-                                       f'{TERMINAL_START_SYMBOLS}'
-                                       )
+    assert parser.c in TERMINAL_START_SYMBOLS
 
     terminal = nodes.Terminal()
     parent.add_child(terminal, parser.pt)
