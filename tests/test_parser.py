@@ -49,8 +49,8 @@ def ebnf(ebnf_path, parse_function):
         with pytest.raises(EBNFError) as error:
             pt = parse_function(ebnf_path)
             #In case a syntax error did not occur, print the PT for inspection
-            print(repr(pt))
-            pytest.xfail("Invalid example did not raise exception")
+            print(repr(pt)) #no cov
+            pytest.xfail("Invalid example did not raise exception") #no cov
         pt = error.value.parser.pt
         partial = True
 
