@@ -59,3 +59,8 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+exclude = [
+    "tests/tree_structure",
+]
