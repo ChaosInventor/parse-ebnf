@@ -197,17 +197,6 @@ class Product(Node):
     """
     lhs = None
     rhs = None
-
-    def __init__(self, lhs=None, rhs=None, pt=None):
-        super().__init__()
-        if lhs is not None or rhs is not None:
-            assert isinstance(pt, parse_ebnf.PT), f"Expected an abstract syntax tree, not a {pt.__class__}"
-        if lhs is not None:
-            self.lhs = lhs
-            self.add_child(lhs, pt)
-        if rhs is not None:
-            self.rhs = rhs
-            self.add_child(rhs, pt)
 class DefinitionList(Node):
     """Node containing a list of definitions.
 
@@ -274,23 +263,6 @@ class Term(Node):
     repetition = None
     primary = None
     exception = None
-
-    def __init__(self, pt=None, repetition=None, primary=None, exception=None):
-        assert repetition is None or isinstance(repetition, Repetition), f"Repetition must be either None or an int, got {repetition}"
-        assert isinstance(primary, Node) or primary is None, "A term must have a primary"
-        assert isinstance(exception, Term) or exception is None, "Exception must be another term"
-        if primary is not None or exception is not None:
-            assert isinstance(pt, parse_ebnf.PT), "Expected an abstract syntax tree"
-
-        super().__init__()
-        self.repetition = repetition
-        self.primary = primary
-        if primary is not None:
-            self.add_child(primary, pt)
-
-        self.exception = exception
-        if exception is not None:
-            self.add_child(exception)
 class Exception(Node):
     """A node holding the exception to a term.
 
@@ -316,16 +288,6 @@ class Exception(Node):
 
     """
     primary = None
-
-    def __init__(self, pt=None, primary=None):
-        assert isinstance(primary, Node) or primary is None, "A term must have a primary"
-        if primary is not None:
-            assert isinstance(pt, parse_ebnf.PT), "Expected an abstract syntax tree"
-
-        super().__init__()
-        self.primary = primary
-        if primary is not None:
-            self.add_child(primary, pt)
 class Repetition(Node):
     """A node holding how many times at most a term may be repeated.
 
@@ -482,43 +444,6 @@ class Identifier(Leaf, Primary):
     .. literalinclude:: /tree_structure/Identifier.py
         :lines: 5
     """
-    def trim(self):
-        ret = ''
-        while len(self.data) > 0:
-            if self.data[-1].isspace():
-                ret += self.data[-1]
-                self.data = self.data[:-1]
-                if ret[-1] == '\n':
-                    self.endLine -= 1
-            else:
-                if (line := self.data.rfind('\n')) != -1:
-                    self.endColumn =  len(self.data[line + 1:])
-                else:
-                    self.endColumn = self.startColumn + len(self.data) - 1
-                break
-
-        if len(ret) > 0:
-            space = Space(ret[::-1])
-
-            space.startLine = self.endLine
-            space.startColumn = self.endColumn + 1
-
-            space.endLine = space.startLine
-            space.endColumn = 0
-            onLptLine = True
-            for c in ret:
-                if c == '\n':
-                    space.endLine += 1
-                    onLptLine = False
-                elif onLptLine:
-                    space.endColumn += 1
-
-            if space.startLine == space.endLine:
-                space.endColumn = space.startColumn + len(ret) - 1
-
-            return space
-        else:
-            return None
 class EmptyString(Leaf, Primary):
     """A node that represents the empty string.
 
