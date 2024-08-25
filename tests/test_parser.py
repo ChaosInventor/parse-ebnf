@@ -4,31 +4,50 @@
 
 import glob
 import io
+import itertools
 from importlib import import_module
 
 import pytest
 
-from parse_ebnf import PT, EBNFError, parsing
+from parse_ebnf import PT, EBNFError, parse_file, parse_from_function, parse_string
 from parse_ebnf.nodes import *
+from parse_ebnf.parsing import parse_pt
 from tests.tree_structure import check_node_children, parent_is_either
 
+
+def parse_with_parse_pt(ebnf_path):
+    with open(ebnf_path) as ebnf:
+        return parse_pt(ebnf.read)
+def parse_with_parse_string(ebnf_path):
+    with open(ebnf_path) as ebnf:
+        return parse_string(ebnf.read())
+def parse_with_parse_from_function(ebnf_path):
+    with open(ebnf_path) as ebnf:
+        return parse_from_function(ebnf.read)
+
 pytestmark = pytest.mark.parametrize(
-        "ebnf_path",
-        [p for ps in [glob.glob("tests/resources/valid/*"),
-                      glob.glob("tests/resources/invalid/*")
-                     ] for p in ps])
+        "ebnf_path,parse_function",
+        [*itertools.product(
+            (p for ps in [glob.glob("tests/resources/valid/*"),
+                          glob.glob("tests/resources/invalid/*")
+                          ] for p in ps),
+            (parse_with_parse_pt, parse_file, parse_with_parse_string,
+             parse_with_parse_from_function
+             )
+            )]
+        )
 
 @pytest.fixture
-def ebnf(ebnf_path):
+def ebnf(ebnf_path, parse_function):
     ebnf = open(ebnf_path)
 
     pt = PT()
     partial = False
 
-    if "/valid/" in ebnf_path: pt = parsing.parse_pt(ebnf.read)
+    if "/valid/" in ebnf_path: pt = parse_function(ebnf_path)
     else:
         with pytest.raises(EBNFError) as error:
-            pt = parsing.parse_pt(ebnf.read)
+            pt = parse_function(ebnf_path)
             #In case a syntax error did not occur, print the PT for inspection
             print(str(pt))
         pt = error.value.parser.pt
