@@ -153,8 +153,8 @@ def parse_comment(parent: nodes.Node, parser: ParserState,
                     text = nodes.Text()
                     comment.add_child(text, parser.pt)
 
-                    text.startLine = parser.line
-                    text.startColumn = parser.column
+                    text.startLine = literal.startLine
+                    text.startColumn = literal.startColumn
                     text.endLine = parser.line
                     text.endColumn = parser.column
                 text.data += oc
@@ -201,7 +201,7 @@ def parse_product(parent: nodes.Node, parser: ParserState) -> nodes.Product:
     defList, lit = parse_definition_list(product, parser)
 
     if lit is not None:
-        raise UnexpectedLiteralError(otherLit, parser)
+        raise UnexpectedLiteralError(lit, parser)
     product.rhs = defList
 
     lit = parse_literal(product, PRODUCT_TERMINATOR_SYMBOLS, parser)
@@ -371,7 +371,7 @@ def parse_definition_list(parent: nodes.Node, parser: ParserState) -> nodes.Defi
     definitionList.startColumn = parser.column
 
     #Breaks when it can't handle something. Returns when it encounters the
-    #special case of an `\)` literal.
+    #special case of an `/)` literal.
     while True:
         if parser.c.isspace():
             parse_space(definitionList, parser)

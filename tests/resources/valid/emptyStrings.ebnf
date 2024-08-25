@@ -1,0 +1,3 @@
+as a term =  | 2*a;
+as an exception = term - / termington;
+empty string = ;

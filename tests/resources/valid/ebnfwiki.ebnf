@@ -35,4 +35,4 @@ lhs = identifier ;
 
 rule = lhs , S , "=" , S , rhs , S , terminator ;
 
-grammar = { S , rule , S } ;
+grammar = {S , rule , S} ;

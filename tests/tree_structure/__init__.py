@@ -131,11 +131,14 @@ def check_node_children(node, partial, *args):
             #TODO: Less horrible way of doing this?
             if len(e.args) > 0 and re.match("ran out of children", e.args[0], re.I):
                 return
-            #TODO: newIndex is not actually updated when an exception is raised,
-            #it is always zero. Fix this and check if the predicate that raised
-            #the exception was examining the last node.
-            elif node.children[newIndex] is node.children[-1]: return
-            else: raise e
+            else:
+                tb = e.__traceback__.tb_next
+                while tb.tb_next is not None:
+                    tb = tb.tb_next
+
+                if node.children[tb.tb_frame.f_locals["index"]] is node.children[-1]:
+                    return
+                else: raise e
         else: raise e
     assert newIndex >= 0, "Error while checking node children"
     assert newIndex == len(node.children), "Did not check all node children, too many"

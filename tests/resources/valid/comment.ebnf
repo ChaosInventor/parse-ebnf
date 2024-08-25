@@ -5,3 +5,9 @@
 
  *)
 
+(* Multiple
+   (* nested comments *)
+   (* on the same level *)(with text
+   (* in-between *)
+*)
+
