@@ -567,13 +567,13 @@ def parse_primary(parent: nodes.Node, parser: ParserState) -> nodes.Primary:
             elif oc == ':':
                 return parse_option(parent, lit, parser)
             else:
-                assert False, 'Bug! Unreachable'
+                assert False, 'Bug! Unreachable' #no cov
         else:
             return parse_group(parent, lit, parser)
     elif parser.c == '?':
         return parse_special(parent, parser)
     else:
-        assert False, 'Bug! Unreachable'
+        assert False, 'Bug! Unreachable' #no cov
 
 def parse_number(parent: nodes.Node, parser: ParserState) -> nodes.Number:
     number = nodes.Number()
