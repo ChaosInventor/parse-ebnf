@@ -2,42 +2,60 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 import glob
 
-pytestmark = pytest.mark.parametrize("ebnf_path", glob.glob("tests/resources/valid/*"))
+import pytest
+
+pytestmark = pytest.mark.parametrize(
+        "ebnf_path",
+        [p for ps in [glob.glob("tests/resources/valid/*"),
+                      glob.glob("tests/resources/invalid/*")
+                     ] for p in ps])
 
 def test_example(ebnf_path):
-
-    from parse_ebnf import AST
-
-    #Your EBNF file goes here
-    ebnf = open(ebnf_path, 'r')
-
-    ast = AST()
+    from parse_ebnf import parse_file
+    from parse_ebnf.parsing import ParsingError
 
     try:
-        #Will raise SyntaxError on error with an error message describing what went wrong
-        ast.parse(ebnf.read) #You need to pass in a function that returns n characters where n is given as the first parameter.
-    finally:
-        #Even after an error a partial tree will be generated.
-        #str gives a text version of the parse tree(meant for debugging), while repr gives the text that it was produced from.
-        print(str(ast))
+        #Your EBNF file goes here.
+        pt = parse_file(ebnf_path)
+        partial = False
+    except ParsingError as e:
+        #If an exception occurs, a partial tree is generated. See the docs for
+        #details.
+        pt = e.parser.pt
+        partial = True
 
-    print(f'Parsed the file creating a tree with {ast.count} nodes, height of {ast.height}. Each node has at MOST {ast.maxDegree} children.')
+    #Prints the text that the tree was parsed from.
+    print(str(pt))
+    #Prints a debug view of the tree.
+    print(repr(pt))
 
-    def DepthFirst(node, func):
-        func(node)
+    print(f'Parsing the file created a tree with {pt.count} nodes.')
+    print(f'The tree has a height of {pt.height}.')
+    print(f'Each node in the tree has at MOST {pt.maxDegree} children.')
+
+    def DepthFirst(node, partial, func):
+        #Partial nodes are in a mostly undefined state.
+        if not partial: func(node)
         for child in node.children:
-            DepthFirst(child, func)
+            #If a node is partial, then its last child is partial. All other
+            #children are not partial.
+            if partial and child is node.children[-1]:
+                DepthFirst(child, True, func)
+            else:
+                DepthFirst(child, False, func)
 
-    #This will visit each node in the parse tree and print the line where its text begins
-    DepthFirst(ast.root, lambda node: print(node.startLine))
+    #This will visit each node in the parse tree and print the line where its
+    #text begins.
+    DepthFirst(pt.root, partial, lambda node: print(node.startLine))
 
-    from parse_ebnf import ASTCommentNode
+    from parse_ebnf.nodes import Comment
 
-    #Finds each comment in the file and prints its text content
-    for child in ast.root.children:
-        if isinstance(child, ASTCommentNode):
-            print(child.data)
+    #Finds each comment in the file and prints its text content.
+    for child in pt.root.children:
+        if isinstance(child, Comment):
+            #A tree being partial means that its root is partial.
+            if partial and child is pt.root.children[-1]: continue
+            print(str(child))
 

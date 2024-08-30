@@ -3,7 +3,7 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import sys, os
+import sys
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -11,7 +11,7 @@ import sys, os
 project = 'parse-ebnf'
 copyright = '2023, ChaosInventor'
 author = 'ChaosInventor'
-release = '1.0'
+release = '2.0'
 
 sys.path.append('..')
 
@@ -24,32 +24,39 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 rst_prolog = """
-.. |AST| replace:: :py:class:`AST <parse_ebnf.AST>`
-.. |ASTNode| replace:: :py:class:`ASTNode <parse_ebnf.ASTNode>`
-.. |ASTRootNode| replace:: :py:class:`ASTRootNode <parse_ebnf.ASTRootNode>`
-.. |ASTTextNode| replace:: :py:class:`ASTTextNode <parse_ebnf.ASTTextNode>`
-.. |ASTCommentNode| replace:: :py:class:`ASTCommentNode <parse_ebnf.ASTCommentNode>`
-.. |ASTSpaceNode| replace:: :py:class:`ASTSpaceNode <parse_ebnf.ASTSpaceNode>`
-.. |ASTIdentifierNode| replace:: :py:class:`ASTIdentifierNode <parse_ebnf.ASTIdentifierNode>`
-.. |ASTLiteralNode| replace:: :py:class:`ASTLiteralNode <parse_ebnf.ASTLiteralNode>`
-.. |ASTProductNode| replace:: :py:class:`ASTProductNode <parse_ebnf.ASTProductNode>`
-.. |ASTDefinitionListNode| replace:: :py:class:`ASTDefinitionListNode <parse_ebnf.ASTDefinitionListNode>`
-.. |ASTDefinitionNode| replace:: :py:class:`ASTDefinitionNode <parse_ebnf.ASTDefinitionNode>`
-.. |ASTTermNode| replace:: :py:class:`ASTTermNode <parse_ebnf.ASTTermNode>`
-.. |ASTExceptionNode| replace:: :py:class:`ASTExceptionNode <parse_ebnf.ASTExceptionNode>`
-.. |ASTRepetitionNode| replace:: :py:class:`ASTRepetitionNode <parse_ebnf.ASTRepetitionNode>`
-.. |ASTTerminalNode| replace:: :py:class:`ASTTerminalNode <parse_ebnf.ASTTerminalNode>`
-.. |ASTRepeatNode| replace:: :py:class:`ASTRepeatNode <parse_ebnf.ASTRepeatNode>`
-.. |ASTOptionNode| replace:: :py:class:`ASTOptionNode <parse_ebnf.ASTOptionNode>`
-.. |ASTGroupNode| replace:: :py:class:`ASTGroupNode <parse_ebnf.ASTGroupNode>`
-.. |ASTSpecialNode| replace:: :py:class:`ASTSpecialNode <parse_ebnf.ASTSpecialNode>`
-.. |ASTEmptyNode| replace:: :py:class:`ASTEmptyNode <parse_ebnf.ASTEmptyNode>`
-.. |ASTEmptyTerm| replace:: :py:class:`ASTEmptyTerm <parse_ebnf.ASTEmptyTerm>`
-
-.. |or| replace:: :ref:`| <groups>`
-.. |maybe| replace:: :ref:`? <optional>`
-.. |any| replace:: :ref:`* <any>`
-.. |more| replace:: :ref:`+ <more>`
+.. |PT| replace:: :py:class:`PT <parse_ebnf.PT>`
+.. |Node| replace:: :py:class:`Node <parse_ebnf.nodes.Node>`
+.. |Leaf| replace:: :py:class:`Leaf <parse_ebnf.nodes.Leaf>`
+.. |Primary| replace:: :py:class:`Primary <parse_ebnf.nodes.Primary>`
+.. |Root| replace:: :py:class:`Root <parse_ebnf.nodes.Root>`
+.. |Comment| replace:: :py:class:`Comment <parse_ebnf.nodes.Comment>`
+.. |Product| replace:: :py:class:`Product <parse_ebnf.nodes.Product>`
+.. |DefinitionList| replace:: :py:class:`DefinitionList <parse_ebnf.nodes.DefinitionList>`
+.. |Definition| replace:: :py:class:`Definition <parse_ebnf.nodes.Definition>`
+.. |Term| replace:: :py:class:`Term <parse_ebnf.nodes.Term>`
+.. |Exception| replace:: :py:class:`Exception <parse_ebnf.nodes.Exception>`
+.. |Repetition| replace:: :py:class:`Repetition <parse_ebnf.nodes.Repetition>`
+.. |Terminal| replace:: :py:class:`Terminal <parse_ebnf.nodes.Terminal>`
+.. |Repeat| replace:: :py:class:`Repeat <parse_ebnf.nodes.Repeat>`
+.. |Option| replace:: :py:class:`Option <parse_ebnf.nodes.Option>`
+.. |Group| replace:: :py:class:`Group <parse_ebnf.nodes.Group>`
+.. |Special| replace:: :py:class:`Special <parse_ebnf.nodes.Special>`
+.. |Identifier| replace:: :py:class:`Identifier <parse_ebnf.nodes.Identifier>`
+.. |EmptyString| replace:: :py:class:`EmptyString <parse_ebnf.nodes.EmptyString>`
+.. |Text| replace:: :py:class:`Text <parse_ebnf.nodes.Text>`
+.. |Space| replace:: :py:class:`Space <parse_ebnf.nodes.Space>`
+.. |Literal| replace:: :py:class:`Literal <parse_ebnf.nodes.Literal>`
+.. |Number| replace:: :py:class:`Number <parse_ebnf.nodes.Number>`
+.. |ParsingError| replace:: :py:class:`ParsingError <parse_ebnf.parsing.ParsingError>`
+.. |EOFError| replace:: :py:class:`EOFError <parse_ebnf.parsing.EOFError>`
+.. |UnexpectedCharacterError| replace:: :py:class:`UnexpectedCharacterError <parse_ebnf.parsing.UnexpectedCharacterError>`
+.. |NoSpaceError| replace:: :py:class:`NoSpaceError <parse_ebnf.parsing.NoSpaceError>`
+.. |NoLiteralError| replace:: :py:class:`NoLiteralError <parse_ebnf.parsing.NoLiteralError>`
+.. |UndelimitedTermError| replace:: :py:class:`UndelimitedTermError <parse_ebnf.parsing.UndelimitedTermError>`
+.. |MultipleTermRepetitions| replace:: :py:class:`MultipleTermRepetitions <parse_ebnf.parsing.MultipleTermRepetitions>`
+.. |MultipleTermExceptions| replace:: :py:class:`MultipleTermExceptions <parse_ebnf.parsing.MultipleTermExceptions>`
+.. |MultipleTermPrimariesError| replace:: :py:class:`MultipleTermPrimariesError <parse_ebnf.parsing.MultipleTermPrimariesError>`
+.. |UnexpectedLiteralError| replace:: :py:class:`UnexpectedLiteralError <parse_ebnf.parsing.UnexpectedLiteralError>`
 """
 
 # -- Options for HTML output -------------------------------------------------
