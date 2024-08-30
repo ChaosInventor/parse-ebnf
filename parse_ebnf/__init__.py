@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Callable
 from io import StringIO
+from typing import Callable
 
 
 class PT:
