@@ -5,8 +5,27 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from io import StringIO
 
 from parse_ebnf import PT, EBNFError, nodes
+
+
+def parse_file(ebnf: str) -> PT:
+    """Parse the file named `ebnf`."""
+    with open(ebnf) as file:
+        return parse_pt(file.read)
+def parse_string(ebnf: str) -> PT:
+    """Parse the EBNF string `ebnf`."""
+    return parse_pt(StringIO(ebnf).read)
+def parse_from_function(read: Callable[[int], str]) -> PT:
+    """Read input data from ``read`` and parse it.
+
+    `read` is assumed to be a function that returns a string of the same length
+    as its argument. A string that is shorter than the given argument is
+    interpreted as being close to the input's end. An empty string as a return
+    value is interpreted as being the end of the input.
+    """
+    return parse_pt(read)
 
 DEFINITION_SEPARATORS = ['|', '/', '!']
 PRODUCT_TERMINATOR_SYMBOLS = [';', '.']

@@ -13,8 +13,7 @@ pytestmark = pytest.mark.parametrize(
                      ] for p in ps])
 
 def test_example(ebnf_path):
-    from parse_ebnf import parse_file
-    from parse_ebnf.parsing import ParsingError
+    from parse_ebnf.parsing import ParsingError, parse_file
 
     try:
         #Your EBNF file goes here.

@@ -9,9 +9,9 @@ from importlib import import_module
 
 import pytest
 
-from parse_ebnf import PT, EBNFError, parse_file, parse_from_function, parse_string
+from parse_ebnf import PT, EBNFError
 from parse_ebnf.nodes import *
-from parse_ebnf.parsing import parse_pt
+from parse_ebnf.parsing import parse_file, parse_from_function, parse_pt, parse_string
 from tests.tree_structure import check_node_children, parent_is_either
 
 

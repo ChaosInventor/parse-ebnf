@@ -27,8 +27,7 @@ pip install parse-ebnf
 ## Quick start
 
 ```python
-from parse_ebnf import parse_file
-from parse_ebnf.parsing import ParsingError
+from parse_ebnf.parsing import ParsingError, parse_file
 
 try:
     #Your EBNF file goes here.
